@@ -101,9 +101,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
-            if(Idx == 0 || Idx == 1 || Idx == 3){
-                continue;
-            }
+            // if(Idx == 0 || Idx == 1 || Idx == 3){
+            //     continue;
+            // }
             
             component_particle *Physics = PhysicsCompos + EntityCount;
             *Physics = component_particle(Position[Idx], Velocity[Idx], Gravity[Idx], Damping[Idx], IsStatic[Idx]);
@@ -258,6 +258,8 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
                        window *Window, renderer *Renderer){
     b32 Success = true;
     
+    // TODO(furkan): Pause, NextFrame, PlayIfPressed etc
+    
     // if(Input->IsKeyWentDown(InputKey_C)){
     //     ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
     // }
@@ -330,11 +332,10 @@ kadabra::scene::Collides(entity *Entity, entity *Other){
         component_transform *T_O = &Other->Transform;
         AABBTransformInPlace(&BB_O_World, T_O->Position, T_O->EulerRotation, T_O->Scale);
         
-        Result = AABBsOverlap(BB_O_World, BB_E_World);
-        printf("AABBsOverlap: %u\n", Result);
+        Result = AABBsOverlap(BB_E_World, BB_O_World);
     }
     
-    return Result; // TODO(furkan): Return if the given entity collides with the other entity
+    return Result;
 }
 
 entity *

@@ -312,30 +312,15 @@ kadabra::Frac(f32 x, f32 *Int){
 #include "kdb_math_mat4.cpp"
 
 b32 
-kadabra::AABBsOverlap(kadabra::aabb A, kadabra::aabb B){
+kadabra::AABBsOverlap(const kadabra::aabb &A, const kadabra::aabb &B){
     b32 Result = false;
 
-    kadabra::vec3 Ps[] = {
-        kadabra::Vec3(B.Min.x, B.Min.y, B.Min.z),
-        kadabra::Vec3(B.Min.x, B.Min.y, B.Max.z),
-        kadabra::Vec3(B.Min.x, B.Max.y, B.Min.z),
-        kadabra::Vec3(B.Min.x, B.Max.y, B.Max.z),
-        kadabra::Vec3(B.Max.x, B.Min.y, B.Min.z),
-        kadabra::Vec3(B.Max.x, B.Min.y, B.Max.z),
-        kadabra::Vec3(B.Max.x, B.Max.y, B.Min.z),
-        kadabra::Vec3(B.Max.x, B.Max.y, B.Max.z)
-    };
-
-    for(u32 PIdx=0; PIdx<StaticArraySize(Ps); PIdx++){
-        kadabra::vec3 P = Ps[PIdx];
-        b32 Overlap = (P.x >= A.Min.x && P.x <= A.Max.x) &&
-                      (P.y >= A.Min.y && P.y <= A.Max.y) &&
-                      (P.z >= A.Min.z && P.z <= A.Max.z);
-        if(Overlap){
-            Result = true;
-            break;
-        }
-    }
+    Result = A.Max.x > B.Min.x &&
+             A.Min.x < B.Max.x &&
+             A.Max.y > B.Min.y &&
+             A.Min.y < B.Max.y &&
+             A.Max.z > B.Min.z &&
+             A.Min.z < B.Max.z;
 
     return Result;
 }
