@@ -1,0 +1,7 @@
+*.db
+bin/x64/*.exe
+bin/x64/*.pdb
+bin/x64/*.obj
+bin/x86/*.exe
+bin/x86/*.pdb
+bin/x86/*.obj
