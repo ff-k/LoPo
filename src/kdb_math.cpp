@@ -339,3 +339,50 @@ kadabra::AABBsOverlap(kadabra::aabb A, kadabra::aabb B){
 
     return Result;
 }
+
+void
+kadabra::AABBTransformInPlace(kadabra::aabb *AABB, 
+                              kadabra::vec3 Translation, 
+                              kadabra::vec3 EulerAngles, 
+                              kadabra::vec3 Scale){
+    kadabra::vec3 Ps[] = {
+        kadabra::Vec3(AABB->Min.x, AABB->Min.y, AABB->Min.z),
+        kadabra::Vec3(AABB->Min.x, AABB->Min.y, AABB->Max.z),
+        kadabra::Vec3(AABB->Min.x, AABB->Max.y, AABB->Min.z),
+        kadabra::Vec3(AABB->Min.x, AABB->Max.y, AABB->Max.z),
+        kadabra::Vec3(AABB->Max.x, AABB->Min.y, AABB->Min.z),
+        kadabra::Vec3(AABB->Max.x, AABB->Min.y, AABB->Max.z),
+        kadabra::Vec3(AABB->Max.x, AABB->Max.y, AABB->Min.z),
+        kadabra::Vec3(AABB->Max.x, AABB->Max.y, AABB->Max.z)
+    };
+    
+    mat4 ModelMatrix = Mat4Identity();
+    ModelMatrix = Mat4Translate(ModelMatrix, Translation);
+    
+    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.z,
+                             RotationAxis_Z);
+    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.y,
+                             RotationAxis_Y);
+    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.x,
+                             RotationAxis_X);
+                             
+    ModelMatrix = Mat4Scale(ModelMatrix, Scale);
+    
+    vec3 Min = Vec3(f32_Max, f32_Max, f32_Max);
+    vec3 Max = Vec3(f32_Min, f32_Min, f32_Min);
+    for(u32 Idx=0; Idx<8; Idx++){
+        vec3 TP = (ModelMatrix*Vec4(Ps[Idx], 1.0f)).xyz;
+        
+        if(Min.x > TP.x){ Min.x = TP.x; }
+        if(Min.y > TP.y){ Min.y = TP.y; }
+        if(Min.z > TP.z){ Min.z = TP.z; }
+        
+        if(Max.x < TP.x){ Max.x = TP.x; }
+        if(Max.y < TP.y){ Max.y = TP.y; }
+        if(Max.z < TP.z){ Max.z = TP.z; }
+    }
+    
+    AABB->Min = Min;
+    AABB->Max = Max;
+    AABB->Center = (Min+Max)*0.5f;
+}

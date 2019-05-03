@@ -55,9 +55,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         vec3 Position[] = {
             Vec3( 0.0f, 15.0f,  0.0f),
             Vec3( 0.0f,  0.0f,  0.0f), 
-            Vec3( 0.0f,  4.0f,  0.0f),
+            Vec3( 0.0f,  4.3f,  0.0f),
             Vec3(-0.5f,  7.5f, 16.0f),
-            Vec3( 0.0f,  7.2f,  0.0f)
+            Vec3( 0.0f,  7.5f,  0.0f)
         };
         
         vec3 EulerAngles[] = {
@@ -101,20 +101,20 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
-            component_particle *Physics = PhysicsCompos + Idx;
-            Physics->Position = Position[Idx];
-            Physics->Velocity = Velocity[Idx];
-            Physics->Gravity  = Gravity[Idx];
-            Physics->Damping  = Damping[Idx];
-            Physics->IsStatic = IsStatic[Idx];
+            if(Idx == 0 || Idx == 1 || Idx == 3){
+                continue;
+            }
             
-            component_renderable *Renderable = Renderables + Idx;
+            component_particle *Physics = PhysicsCompos + EntityCount;
+            *Physics = component_particle(Position[Idx], Velocity[Idx], Gravity[Idx], Damping[Idx], IsStatic[Idx]);
+            
+            component_renderable *Renderable = Renderables + EntityCount;
             Renderable->Material = &AssetManager->LoPoMaterials[Material[Idx]];
             Renderable->Mesh = AssetManager->Meshes + Material[Idx];
-            Renderable->RenderMeshAABB = false;
+            Renderable->RenderMeshAABB = true;
             Renderable->ToBeRendered = true;
             
-            entity *Entity = Entities + Idx;
+            entity *Entity = Entities + EntityCount;
             Entity->Transform = component_transform();
             Entity->Transform.Position      = Position[Idx];
             Entity->Transform.EulerRotation = EulerAngles[Idx];
@@ -268,39 +268,73 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdateGizmo(Window);
     }
     
-    for(u32 Idx=0; Idx<EntityCount; Idx++){
-        entity *E = Entities + Idx;
-        component_particle *Physics = E->Physics;
-        if(Physics){
-            if(Physics->IsStatic == false){
-                f32 UpdateTimeRemaining = Input->DeltaTime;
-                while(UpdateTimeRemaining > 0.0f){
-                    f32 dt = MinOf(FixedDeltaTime, 
-                                   UpdateTimeRemaining);
+    f32 UpdateTimeRemaining = Input->DeltaTime;
+    while(UpdateTimeRemaining > 0.0f){
+        f32 dt = MinOf(FixedDeltaTime, UpdateTimeRemaining);
+        for(u32 Idx=0; Idx<EntityCount; Idx++){
+            entity *E = Entities + Idx;
+            component_particle *Physics = E->Physics;
+            if(Physics){
+                if(Physics->IsStatic == false){
                     Physics->Integrate(dt);
-                    UpdateTimeRemaining -= dt;
                     
-                    if(Collides(E)){
-                        Physics->UndoLastIntegration();
-                        
-                        // TODO(furkan): OnCollision
-                        
-                        break;
+                    for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
+                        if(Idx != Jdx){
+                            entity *Other = Entities + Jdx;
+                            if(Other->Physics){
+                                if(Collides(E, Other)){
+                                    Physics->UndoLastIntegration();
+                                    
+                                    // TODO(furkan): OnCollision
+                                }
+                            }
+                        }
                     }
+                    
+                    component_transform *Transform = &E->Transform;
+                    Transform->Position = Physics->Position;
                 }
             }
-            
-            component_transform *Transform = &E->Transform;
-            Transform->Position = Physics->Position;
         }
+        UpdateTimeRemaining -= dt;
     }
     
     return Success;
 }
 
 b32
-kadabra::scene::Collides(entity *Entity){
-    return false; // TODO(furkan): Return if the given entity collides with any other entity
+kadabra::scene::Collides(entity *Entity, entity *Other){
+    
+    b32 Result = false;
+    
+    aabb *BB_E = 0;
+    if(Entity->Renderable){
+        if(Entity->Renderable->Mesh){
+            BB_E = &Entity->Renderable->Mesh->AABB;
+        }
+    }
+    
+    aabb *BB_O = 0;
+    if(Other->Renderable){
+        if(Other->Renderable->Mesh){
+            BB_O = &Other->Renderable->Mesh->AABB;
+        }
+    }
+    
+    if(BB_E && BB_O){
+        aabb BB_E_World = *BB_E;
+        component_transform *T_E = &Entity->Transform;
+        AABBTransformInPlace(&BB_E_World, T_E->Position, T_E->EulerRotation, T_E->Scale);
+        
+        aabb BB_O_World = *BB_O;
+        component_transform *T_O = &Other->Transform;
+        AABBTransformInPlace(&BB_O_World, T_O->Position, T_O->EulerRotation, T_O->Scale);
+        
+        Result = AABBsOverlap(BB_O_World, BB_E_World);
+        printf("AABBsOverlap: %u\n", Result);
+    }
+    
+    return Result; // TODO(furkan): Return if the given entity collides with the other entity
 }
 
 entity *

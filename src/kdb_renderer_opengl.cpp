@@ -684,8 +684,8 @@ namespace kadabra {
                                            ViewMatrixTran->Ptr);
                         glUniformMatrix4fv(LProjM, 1, GL_FALSE, 
                                            ProjMatrixTran->Ptr);
-                        glUniformMatrix4fv(LModelM, 1, GL_FALSE, 
-                                           Mat4Transpose(ModelMatrix).Ptr);
+                        glUniformMatrix4fv(LModelM, 1, GL_TRUE, 
+                                           ModelMatrix.Ptr);
                     } break;
                     UnexpectedDefaultCase;
                 }

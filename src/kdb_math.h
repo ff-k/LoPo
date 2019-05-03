@@ -569,6 +569,8 @@ namespace kadabra {
     };
     
     b32 AABBsOverlap(aabb A, aabb B);
+    void AABBTransformInPlace(aabb *AABB, vec3 Translation, 
+                              vec3 EulerAngles, vec3 Scale);
     
 }
 
