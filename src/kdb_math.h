@@ -565,7 +565,6 @@ namespace kadabra {
     struct aabb {
         vec3 Min;
         vec3 Max;
-        vec3 Center;
     };
     
     b32 AABBsOverlap(const aabb& A, const aabb& B);

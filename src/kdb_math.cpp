@@ -369,5 +369,4 @@ kadabra::AABBTransformInPlace(kadabra::aabb *AABB,
     
     AABB->Min = Min;
     AABB->Max = Max;
-    AABB->Center = (Min+Max)*0.5f;
 }

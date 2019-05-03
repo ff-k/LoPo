@@ -48,6 +48,44 @@ kadabra::asset_image::Unload(){
     return Success;
 }
 
+b32 kadabra::asset_mesh::ConstructBVH(){
+    b32 Success = false;
+    
+    Assert(IndexCount > 0);
+    
+    printf("FaceCount: %4u, ", FaceCount);
+    
+    u32 *FacesSorted = 0;
+    if(platform::MemoryAllocate((void **)&FacesSorted, 
+                                sizeof(u32) * FaceCount)){
+        
+        for(u32 Idx=0; Idx<FaceCount; Idx++){
+            FacesSorted[Idx] = Idx;
+        }
+        
+        BVHRoot = 0;
+        u32 BVHDepth = BVH::ConstructFromIndexedMesh(&BVHRoot, 
+                                                     FacesSorted, FaceCount, 
+                                                     Vertices, VertexCount, 
+                                                     Indices, IndexCount);
+                                                     
+        printf("BVHDepth: %2u", BVHDepth);
+                                                     
+        if(BVHDepth){
+            Success = true;
+        } else {
+            // TODO(furkan): Free allocated BVH nodes, if there are any
+            BVHRoot = 0;
+        }
+        
+        platform::MemoryFree((void **)&FacesSorted);
+    }
+    
+    printf("\n");
+    
+    return Success;
+}
+
 b32
 kadabra::asset_mesh::ComputeAABB(swizzle_order Swizzling){
     b32 Success = true;
@@ -115,7 +153,7 @@ kadabra::asset_mesh::ComputeAABB(swizzle_order Swizzling){
         }
     }
     
-    AABB = { Min, Max, ((Min+Max)*0.5f) };
+    AABB = { Min, Max };
     
     return Success;
 }
@@ -184,7 +222,7 @@ kadabra::asset_mesh::TranslateAndScale(b32 MoveMidpointToOrigin,
             }
         }
         
-        AABB = { Min, Max, ((Min+Max)*0.5f) };
+        AABB = { Min, Max };
     }
     
     return Success;
@@ -782,6 +820,9 @@ kadabra::asset_manager::Initialise(u32 MeshFileCount, char **MeshFilePaths,
             Mesh->ComputeAABB(Swizzling);
             // Mesh->TranslateAndScale(true, true, 1.0f);
             Mesh->ComputePerFaceAttribute(false);
+            if(!Mesh->ConstructBVH()){
+                Error("ConstructBVH failed");
+            }
             
             MeshCount++;
             Mesh->ID = MeshCount;

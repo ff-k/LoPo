@@ -43,6 +43,7 @@ set ReleaseLinkerFlag=%CommonLinkerFlags% /opt:ref /NODEFAULTLIB:libcmtd.lib
 
 set SourceFiles=..\..\src\kdb_main.cpp ^
                 ..\..\src\kdb_asset.cpp ^
+                ..\..\src\kdb_bvh.cpp ^
                 ..\..\src\kdb_camera.cpp ^
                 ..\..\src\kdb_input.cpp ^
                 ..\..\src\kdb_io.cpp ^

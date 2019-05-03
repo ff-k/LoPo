@@ -3,6 +3,7 @@
 
 #include "kdb_common.h"
 #include "kdb_math.h"
+#include "kdb_bvh.h"
 
 #define SwizzleCoords(CoordA, CoordB)                             \
     *((u32 *)&CoordA) = *((u32 *)&CoordA) ^ *((u32 *)&CoordB);    \
@@ -10,6 +11,8 @@
     *((u32 *)&CoordA) = *((u32 *)&CoordA) ^ *((u32 *)&CoordB);
 
 namespace kadabra {
+    
+    struct bvh_node;
     
     enum swizzle_order {
         SwizzleOrder_XYZ,
@@ -70,6 +73,8 @@ namespace kadabra {
         public:
         aabb    AABB;
         
+        bvh_node *BVHRoot;
+        
         vertex *Vertices;
         u32    *Indices;
         vec3   *FaceNormals;
@@ -91,6 +96,7 @@ namespace kadabra {
     
         u32 ID;
         
+        b32 ConstructBVH();
         b32 ComputeAABB(swizzle_order Swizzling);
         b32 TranslateAndScale(b32 MoveMidpointToOrigin, b32 ScaleToTarget, f32 TargetScale);
         b32 ComputePerFaceAttribute(b32 OverrideVertexNormals);

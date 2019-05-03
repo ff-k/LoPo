@@ -789,7 +789,7 @@ namespace kadabra {
                                      &ViewMatrixTran, &ProjMatrixTran);
                 }
             }
-    
+            
             OpenGLAssertNoError();
     
             if(Scene->ShowGizmo && 
