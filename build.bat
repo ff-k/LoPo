@@ -25,7 +25,7 @@ REM set DisabledWarnings=/wd4100 /wd4127 /wd4189 /wd4201 /wd4312 /wd4505 /wd4530
 set DisabledWarnings=/wd4100 /wd4127 /wd4201 /wd4189 /wd4800
 set CommonCompilerFlags=/nologo /D_SCL_SECURE_NO_WARNINGS /Gm- /GR- /EHa- /WX /W4 /EHsc %DisabledWarnings% /FC /Z7 /GS /sdl -I "..\..\include" /Wv:18
 REM /incremental : Incremental linking [:no disables it]
-set CommonLinkerFlags=/subsystem:windows user32.lib gdi32.lib opengl32.lib /entry:mainCRTStartup /incremental:no /NODEFAULTLIB:libc.lib /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrtd.lib /LIBPATH:%KDBLibPath% /OUT:"kdb.exe"
+set CommonLinkerFlags=/subsystem:console user32.lib gdi32.lib opengl32.lib /entry:mainCRTStartup /incremental:no /NODEFAULTLIB:libc.lib /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:libcd.lib /NODEFAULTLIB:msvcrtd.lib /LIBPATH:%KDBLibPath% /OUT:"kdb.exe"
 
 REM /Od          : Disable optimizations 
 REM /MTd         : Link with libcmtd.lib
@@ -37,7 +37,7 @@ REM /O2          : Maximize speed
 REM /MT          : Link with libcmt.lib
 REM /Zo          : Generate richer debugging information for optimized code
 REM TODO(furkan): Set KDBDevelopmentBuild to 0 for release build
-set ReleaseCompilerFlag=/DKDBDevelopmentBuild=0 %CommonCompilerFlags% /O2 /MT /Zo
+set ReleaseCompilerFlag=/DKDBDevelopmentBuild=1 %CommonCompilerFlags% /O2 /MT /Zo
 REM /opt:ref     : Remove functions that are never referenced
 set ReleaseLinkerFlag=%CommonLinkerFlags% /opt:ref /NODEFAULTLIB:libcmtd.lib 
 

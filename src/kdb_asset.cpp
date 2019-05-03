@@ -732,13 +732,55 @@ kadabra::asset_manager::Initialise(u32 MeshFileCount, char **MeshFilePaths,
     MaterialHidden.AmbientLight = Vec4(1.0f, 1.0f, 1.0f, 0.0f);
     
     LoadGizmo();
+    
+    ///
+    
+    CeilingIdx     = 0;
+    CubeInwardIdx  = 1;
+    CubeOutwardIdx = 2;
+    CylinderIdx    = 3;
+    FliTriIdx      = 4;
+    FloorIdx       = 5;
+    IcosphereIdx   = 6;
+    PlaneIdx       = 7;
+    PlatformIdx    = 8;
+    PyramidIdx     = 9;
+    SphereIdx      = 10;
+    
+    Assert(MeshFileCount == LoPoTextureCount);
+    
+    char *LoPoTexturePaths[] = {
+        "..\\..\\assets\\textures\\ceiling.png ",
+        "..\\..\\assets\\textures\\cube_inward.png ",
+        "..\\..\\assets\\textures\\cube_outward.png",
+        "..\\..\\assets\\textures\\cylinder.png ",
+        "..\\..\\assets\\textures\\flitri.png ",
+        "..\\..\\assets\\textures\\floor.png ",
+        "..\\..\\assets\\textures\\icosphere.png ",
+        "..\\..\\assets\\textures\\plane.png ",
+        "..\\..\\assets\\textures\\platform.png ",
+        "..\\..\\assets\\textures\\pyramid.png ",
+        "..\\..\\assets\\textures\\sphere.png",
+    };
+    
+    for(u32 Idx=0; Idx<LoPoTextureCount; Idx++){
+        if(LoPoTextures[Idx].Load(LoPoTexturePaths[Idx])){
+            LoPoMaterials[Idx].Shader = ShaderType_Standard;
+            LoPoMaterials[Idx].Texture = &LoPoTextures[Idx];
+            LoPoMaterials[Idx].AmbientLight = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        } else {
+            Error("LoPoTextures[%u] could not be loaded", Idx);
+        }
+    }
+    
+    ///
 
     for(u32 M=0; M<MeshFileCount; M++){
         asset_mesh *Mesh = Meshes + MeshCount;
 
         if(Mesh->Load(MeshFilePaths[M])){
             Mesh->ComputeAABB(Swizzling);
-            Mesh->TranslateAndScale(true, true, 1.0f);
+            // Mesh->TranslateAndScale(true, true, 1.0f);
             Mesh->ComputePerFaceAttribute(false);
             
             MeshCount++;

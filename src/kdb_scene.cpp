@@ -13,8 +13,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
 
     camera Camera(45.0f, 0.1f, 1000.0f, 
                   CameraProjection_Perspective,
-                  Vec3(0.0f, 0.0f, 10.0f), 
-                  Vec3(0.0f, 0.0f,  0.0f), true);
+                  Vec3( 1.6f,   7.9f, -0.6f), 
+                  Vec3(-5.0f, 250.0f,  0.0f), true);
                   
     CameraCount = 1;
     for(u32 CamIdx=0; CamIdx<CameraCount; CamIdx++){
@@ -22,6 +22,98 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     }
     
     ActiveCameraIndex = 0;
+    
+    u32 SceneObjectCount = 5;
+    
+    Assert(SceneObjectCount <= SceneCapacity);
+    
+    component_renderable *Renderables = 0;
+    if(platform::MemoryAllocate((void **)&Renderables, 
+                                sizeof(component_renderable)*SceneObjectCount)){
+        
+        u32 CeilingEntityIdx  = 0;
+        u32 FloorEntityIdx    = 1;
+        u32 PlatformEntityIdx = 2;
+        u32 FliTriEntityIdx   = 3;
+        u32 IcosphereEntityIdx   = 4;
+        
+        component_renderable *CeilingRenderable = Renderables + CeilingEntityIdx;
+        CeilingRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->CeilingIdx];
+        CeilingRenderable->Mesh = AssetManager->Meshes + AssetManager->CeilingIdx;
+        CeilingRenderable->RenderMeshAABB = false;
+        CeilingRenderable->ToBeRendered = true;
+        
+        entity *Ceiling = Entities + CeilingEntityIdx;
+        Ceiling->Transform = component_transform();
+        Ceiling->Transform.Position      = Vec3(0.0f, 15.0f, 0.0f);
+        Ceiling->Transform.EulerRotation = Vec3(180.0f, 0.0f, 0.0f);
+        Ceiling->Transform.Scale         = Vec3(1.0f, 1.0f, 1.0f);
+        Ceiling->Renderable = CeilingRenderable;
+        Ceiling->IsActive = true;
+        EntityCount++;
+        
+        component_renderable *FloorRenderable = Renderables + FloorEntityIdx;
+        FloorRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->FloorIdx];
+        FloorRenderable->Mesh = AssetManager->Meshes + AssetManager->FloorIdx;
+        FloorRenderable->RenderMeshAABB = false;
+        FloorRenderable->ToBeRendered = true;
+        
+        entity *Floor = Entities + FloorEntityIdx;
+        Floor->Transform = component_transform();
+        Floor->Transform.Position      = Vec3(0.0f, 0.0f, 0.0f);
+        Floor->Transform.EulerRotation = Vec3(0.0f, 0.0f, 0.0f);
+        Floor->Transform.Scale         = Vec3(1.0f, 1.0f, 1.0f);
+        Floor->Renderable = FloorRenderable;
+        Floor->IsActive = true;
+        EntityCount++;
+        
+        component_renderable *PlatformRenderable = Renderables + PlatformEntityIdx;
+        PlatformRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->PlatformIdx];
+        PlatformRenderable->Mesh = AssetManager->Meshes + AssetManager->PlatformIdx;
+        PlatformRenderable->RenderMeshAABB = false;
+        PlatformRenderable->ToBeRendered = true;
+        
+        entity *Platform = Entities + PlatformEntityIdx;
+        Platform->Transform = component_transform();
+        Platform->Transform.Position      = Vec3(0.0f, 4.0f, 0.0f);
+        Platform->Transform.EulerRotation = Vec3(0.0f, 0.0f, 0.0f);
+        Platform->Transform.Scale         = Vec3(1.5f, 1.5f, 1.5f);
+        Platform->Renderable = PlatformRenderable;
+        Platform->IsActive = true;
+        EntityCount++;
+        
+        component_renderable *FliTriRenderable = Renderables + FliTriEntityIdx;
+        FliTriRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->FliTriIdx];
+        FliTriRenderable->Mesh = AssetManager->Meshes + AssetManager->FliTriIdx;
+        FliTriRenderable->RenderMeshAABB = false;
+        FliTriRenderable->ToBeRendered = true;
+        
+        entity *FliTri = Entities + FliTriEntityIdx;
+        FliTri->Transform = component_transform();
+        FliTri->Transform.Position      = Vec3(-0.5f , 7.5f , 16.0f );
+        FliTri->Transform.EulerRotation = Vec3( 0.0f , 0.0f ,  0.0f );
+        FliTri->Transform.Scale         = Vec3( 0.33f, 0.33f,  0.33f);
+        FliTri->Renderable = FliTriRenderable;
+        FliTri->IsActive = true;
+        EntityCount++;
+        
+        component_renderable *IcosphereRenderable = Renderables + IcosphereEntityIdx;
+        IcosphereRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->IcosphereIdx];
+        IcosphereRenderable->Mesh = AssetManager->Meshes + AssetManager->IcosphereIdx;
+        IcosphereRenderable->RenderMeshAABB = false;
+        IcosphereRenderable->ToBeRendered = true;
+        
+        entity *Icosphere = Entities + IcosphereEntityIdx;
+        Icosphere->Transform = component_transform();
+        Icosphere->Transform.Position      = Vec3(0.0f, 7.2f, 0.0f);
+        Icosphere->Transform.EulerRotation = Vec3(0.0f, 0.0f, 0.0f);
+        Icosphere->Transform.Scale         = Vec3(0.2f, 0.2f, 0.2f);
+        Icosphere->Renderable = IcosphereRenderable;
+        Icosphere->IsActive = true;
+        EntityCount++;
+    } else {
+        Error("Renderable allocation failed");
+    }
 }
 
 void 
@@ -43,7 +135,7 @@ void
 kadabra::scene::UpdateCamera(input *Input, camera *Camera, b32 Freeform){
     
     f32 DeltaTime     = Input->DeltaTime;
-    f32 MovementSpeed = DeltaTime * 200.0f;
+    f32 MovementSpeed = DeltaTime * 25.0f;
     f32 RotationSpeed = DeltaTime * 2500.0f;
     
     if(Input->IsKeyWentDown(InputKey_P)){
@@ -100,8 +192,8 @@ kadabra::scene::UpdateCamera(input *Input, camera *Camera, b32 Freeform){
     if(Input->IsKeyDown(InputKey_Home)){
         camera FreshCam(45.0f, 0.1f, 1000.0f, 
                         CameraProjection_Perspective,
-                        Vec3(0.0f,85.0f, 0.0f), 
-                        Vec3(0.0f, 0.0f, 0.0f), true);
+                        Vec3( 1.6f,   7.9f, -0.6f), 
+                        Vec3(-5.0f, 250.0f,  0.0f), true);
         *Camera = FreshCam;
     }
     
@@ -131,6 +223,12 @@ kadabra::scene::UpdateCamera(input *Input, camera *Camera, b32 Freeform){
     }
     
     Camera->UpdateAxes();
+    
+    if(Input->IsKeyWentDown(InputKey_Space)){
+        vec3 CamP = Camera->Transform.Position;
+        vec3 CamO = Camera->Transform.EulerRotation;
+        Warning("CamP: (%f %f %f), CamO: (%f %f %f)", CamP.x, CamP.y, CamP.z, CamO.x, CamO.y, CamO.z);
+    }
 }
 
 void 
@@ -148,7 +246,7 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
     b32 Success = true;
     
     if(Input->IsKeyWentDown(InputKey_C)){
-        ActiveCameraIndex = ActiveCameraIndex ^0x1;
+        ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
     }
     
     UpdateRenderer(Input, Renderer);

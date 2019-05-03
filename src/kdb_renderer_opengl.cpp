@@ -996,9 +996,9 @@ namespace kadabra {
         
         glEnable(GL_MULTISAMPLE_ARB);
         
-        // glFrontFace(GL_CW);
-        // glCullFace(GL_BACK);
-        // glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CCW);
+        glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE);
     
         if(!CompileStandardShader(&StandardShader)){
             Warning("Standard shader could not be compiled");

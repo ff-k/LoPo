@@ -102,6 +102,24 @@ namespace kadabra {
     class asset_manager {
         public:
         
+        u32 CeilingIdx;
+        u32 CubeInwardIdx;
+        u32 CubeOutwardIdx;
+        u32 CylinderIdx;
+        u32 FliTriIdx;
+        u32 FloorIdx;
+        u32 IcosphereIdx;
+        u32 PlaneIdx;
+        u32 PlatformIdx;
+        u32 PyramidIdx;
+        u32 SphereIdx;
+        
+#define LoPoTextureCount 11
+        asset_image    LoPoTextures[LoPoTextureCount];
+        asset_material LoPoMaterials[LoPoTextureCount];
+        
+        //
+        
         asset_image NullTexture;
         asset_material MaterialOpaque;
         asset_material MaterialTranslucent;
