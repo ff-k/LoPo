@@ -9,9 +9,8 @@ namespace kadabra {
         vec3 Position;
         vec3 Velocity;
         vec3 Gravity;
-        vec3 TotalForce;
         f32  Damping;
-        f32  InverseMass;
+        f32  InverseMass; // NOTE(furkan): Not used for now
         
         particle(){
             Position    = Vec3(0.0f, 0.0f, 0.0f);
@@ -25,7 +24,6 @@ namespace kadabra {
             this->Position    = Position;
             this->Velocity    = Velocity;
             this->Gravity     = Gravity;
-            this->TotalForce  = Vec3(0.0f, 0.0f, 0.0f);
             this->Damping     = Damping;
             this->InverseMass = (Mass != 0.0f) ? 1.0f/Mass : f32_Max;
         }

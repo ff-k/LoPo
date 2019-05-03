@@ -5,8 +5,6 @@ kadabra::particle::Integrate(f32 DeltaTime){
     
     Position += Velocity*DeltaTime;
     
-    vec3 Acceleration = Gravity + InverseMass*TotalForce;
+    vec3 Acceleration = Gravity;
     Velocity = (Velocity + Acceleration*DeltaTime) * Power(Damping, DeltaTime);
-    
-    TotalForce = Vec3(0.0f, 0.0f, 0.0f);
 }
