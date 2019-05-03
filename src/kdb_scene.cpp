@@ -69,7 +69,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         vec3 Scale[] = {
-            Vec3(  1.0f,  7.2f, 1.0f),
+            Vec3(1.00f, 7.20f, 1.00f),
             Vec3(1.00f, 7.80f, 1.00f),
             Vec3(1.50f, 1.50f, 1.50f),
             Vec3(0.33f, 0.33f, 0.33f),
@@ -92,8 +92,12 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f, -1.0f, 0.0f),
         };
         
-        f32  Damping[] = {
+        f32 Damping[] = {
             0.0f, 0.0f, 0.0f, 0.99f, 0.95f
+        };
+        
+        b32 IsStatic[] = {
+            true, true, true, false, false
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
@@ -102,6 +106,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Physics->Velocity = Velocity[Idx];
             Physics->Gravity  = Gravity[Idx];
             Physics->Damping  = Damping[Idx];
+            Physics->IsStatic = IsStatic[Idx];
             
             component_renderable *Renderable = Renderables + Idx;
             Renderable->Material = &AssetManager->LoPoMaterials[Material[Idx]];
@@ -263,7 +268,39 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdateGizmo(Window);
     }
     
+    for(u32 Idx=0; Idx<EntityCount; Idx++){
+        entity *E = Entities + Idx;
+        component_particle *Physics = E->Physics;
+        if(Physics){
+            if(Physics->IsStatic == false){
+                f32 UpdateTimeRemaining = Input->DeltaTime;
+                while(UpdateTimeRemaining > 0.0f){
+                    f32 dt = MinOf(FixedDeltaTime, 
+                                   UpdateTimeRemaining);
+                    Physics->Integrate(dt);
+                    UpdateTimeRemaining -= dt;
+                    
+                    if(Collides(E)){
+                        Physics->UndoLastIntegration();
+                        
+                        // TODO(furkan): OnCollision
+                        
+                        break;
+                    }
+                }
+            }
+            
+            component_transform *Transform = &E->Transform;
+            Transform->Position = Physics->Position;
+        }
+    }
+    
     return Success;
+}
+
+b32
+kadabra::scene::Collides(entity *Entity){
+    return false; // TODO(furkan): Return if the given entity collides with any other entity
 }
 
 entity *
