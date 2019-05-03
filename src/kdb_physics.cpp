@@ -1,7 +1,7 @@
 #include "kdb_physics.h"
 
 void 
-kadabra::particle::Integrate(f32 DeltaTime){
+kadabra::component_particle::Integrate(f32 DeltaTime){
     
     Position += Velocity*DeltaTime;
     

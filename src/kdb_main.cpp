@@ -147,7 +147,7 @@ int main(int ArgCount, char ** Args){
                     
                     kadabra::input Input;
                     if(kadabra::platform::InitialiseInput(&Input, &Window, 
-                                                 &SystemProps)){ 
+                                                          &SystemProps)){ 
                         
                         Input.DeltaTime = 1.0f/(f32)SystemProps.PrimaryMonitorRefreshRate;
 

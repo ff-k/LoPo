@@ -38,89 +38,87 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     Assert(SceneObjectCount <= SceneCapacity);
     
     component_renderable *Renderables = 0;
+    component_particle   *PhysicsCompos = 0;
     if(platform::MemoryAllocate((void **)&Renderables, 
-                                sizeof(component_renderable)*SceneObjectCount)){
+                                sizeof(component_renderable)*SceneObjectCount) &&
+       platform::MemoryAllocate((void **)&PhysicsCompos, 
+                                sizeof(component_particle)*SceneObjectCount)){
         
-        u32 CeilingEntityIdx   = 0;
-        u32 FloorEntityIdx     = 1;
-        u32 PlatformEntityIdx  = 2;
-        u32 FliTriEntityIdx    = 3;
-        u32 IcosphereEntityIdx = 4;
+        u32 Material[] = {
+            AssetManager->CeilingIdx,
+            AssetManager->FloorIdx,
+            AssetManager->PlatformIdx,
+            AssetManager->FliTriIdx,
+            AssetManager->IcosphereIdx
+        };
         
-        component_renderable *CeilingRenderable = Renderables + CeilingEntityIdx;
-        CeilingRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->CeilingIdx];
-        CeilingRenderable->Mesh = AssetManager->Meshes + AssetManager->CeilingIdx;
-        CeilingRenderable->RenderMeshAABB = false;
-        CeilingRenderable->ToBeRendered = true;
+        vec3 Position[] = {
+            Vec3( 0.0f, 15.0f,  0.0f),
+            Vec3( 0.0f,  0.0f,  0.0f), 
+            Vec3( 0.0f,  4.0f,  0.0f),
+            Vec3(-0.5f,  7.5f, 16.0f),
+            Vec3( 0.0f,  7.2f,  0.0f)
+        };
         
-        entity *Ceiling = Entities + CeilingEntityIdx;
-        Ceiling->Transform = component_transform();
-        Ceiling->Transform.Position      = Vec3(  0.0f, 15.0f, 0.0f);
-        Ceiling->Transform.EulerRotation = Vec3(180.0f,  0.0f, 0.0f);
-        Ceiling->Transform.Scale         = Vec3(  1.0f,  7.2f, 1.0f);
-        Ceiling->Renderable = CeilingRenderable;
-        Ceiling->IsActive = true;
-        EntityCount++;
+        vec3 EulerAngles[] = {
+            Vec3(180.0f, 0.0f, 0.0f),
+            Vec3(  0.0f, 0.0f, 0.0f),
+            Vec3(  0.0f, 0.0f, 0.0f),
+            Vec3(  0.0f, 0.0f, 0.0f),
+            Vec3(  0.0f, 0.0f, 0.0f)
+        };
         
-        component_renderable *FloorRenderable = Renderables + FloorEntityIdx;
-        FloorRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->FloorIdx];
-        FloorRenderable->Mesh = AssetManager->Meshes + AssetManager->FloorIdx;
-        FloorRenderable->RenderMeshAABB = false;
-        FloorRenderable->ToBeRendered = true;
+        vec3 Scale[] = {
+            Vec3(  1.0f,  7.2f, 1.0f),
+            Vec3(1.00f, 7.80f, 1.00f),
+            Vec3(1.50f, 1.50f, 1.50f),
+            Vec3(0.33f, 0.33f, 0.33f),
+            Vec3(0.20f, 0.20f, 0.20f)
+        };
         
-        entity *Floor = Entities + FloorEntityIdx;
-        Floor->Transform = component_transform();
-        Floor->Transform.Position      = Vec3(0.0f, 0.0f, 0.0f);
-        Floor->Transform.EulerRotation = Vec3(0.0f, 0.0f, 0.0f);
-        Floor->Transform.Scale         = Vec3(1.0f, 7.8f, 1.0f);
-        Floor->Renderable = FloorRenderable;
-        Floor->IsActive = true;
-        EntityCount++;
+        vec3 Velocity[] = {
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3( -1.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
+        };
         
-        component_renderable *PlatformRenderable = Renderables + PlatformEntityIdx;
-        PlatformRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->PlatformIdx];
-        PlatformRenderable->Mesh = AssetManager->Meshes + AssetManager->PlatformIdx;
-        PlatformRenderable->RenderMeshAABB = false;
-        PlatformRenderable->ToBeRendered = true;
+        vec3 Gravity[] = {
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f, -1.0f, 0.0f),
+        };
         
-        entity *Platform = Entities + PlatformEntityIdx;
-        Platform->Transform = component_transform();
-        Platform->Transform.Position      = Vec3(0.0f, 4.0f, 0.0f);
-        Platform->Transform.EulerRotation = Vec3(0.0f, 0.0f, 0.0f);
-        Platform->Transform.Scale         = Vec3(1.5f, 1.5f, 1.5f);
-        Platform->Renderable = PlatformRenderable;
-        Platform->IsActive = true;
-        EntityCount++;
+        f32  Damping[] = {
+            0.0f, 0.0f, 0.0f, 0.99f, 0.95f
+        };
         
-        component_renderable *FliTriRenderable = Renderables + FliTriEntityIdx;
-        FliTriRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->FliTriIdx];
-        FliTriRenderable->Mesh = AssetManager->Meshes + AssetManager->FliTriIdx;
-        FliTriRenderable->RenderMeshAABB = false;
-        FliTriRenderable->ToBeRendered = true;
-        
-        entity *FliTri = Entities + FliTriEntityIdx;
-        FliTri->Transform = component_transform();
-        FliTri->Transform.Position      = Vec3(-0.5f , 7.5f , 16.0f );
-        FliTri->Transform.EulerRotation = Vec3( 0.0f , 0.0f ,  0.0f );
-        FliTri->Transform.Scale         = Vec3( 0.33f, 0.33f,  0.33f);
-        FliTri->Renderable = FliTriRenderable;
-        FliTri->IsActive = true;
-        EntityCount++;
-        
-        component_renderable *IcosphereRenderable = Renderables + IcosphereEntityIdx;
-        IcosphereRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->IcosphereIdx];
-        IcosphereRenderable->Mesh = AssetManager->Meshes + AssetManager->IcosphereIdx;
-        IcosphereRenderable->RenderMeshAABB = false;
-        IcosphereRenderable->ToBeRendered = true;
-        
-        entity *Icosphere = Entities + IcosphereEntityIdx;
-        Icosphere->Transform = component_transform();
-        Icosphere->Transform.Position      = Vec3(0.0f, 7.2f, 0.0f);
-        Icosphere->Transform.EulerRotation = Vec3(0.0f, 0.0f, 0.0f);
-        Icosphere->Transform.Scale         = Vec3(0.2f, 0.2f, 0.2f);
-        Icosphere->Renderable = IcosphereRenderable;
-        Icosphere->IsActive = true;
-        EntityCount++;
+        for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
+            component_particle *Physics = PhysicsCompos + Idx;
+            Physics->Position = Position[Idx];
+            Physics->Velocity = Velocity[Idx];
+            Physics->Gravity  = Gravity[Idx];
+            Physics->Damping  = Damping[Idx];
+            
+            component_renderable *Renderable = Renderables + Idx;
+            Renderable->Material = &AssetManager->LoPoMaterials[Material[Idx]];
+            Renderable->Mesh = AssetManager->Meshes + Material[Idx];
+            Renderable->RenderMeshAABB = false;
+            Renderable->ToBeRendered = true;
+            
+            entity *Entity = Entities + Idx;
+            Entity->Transform = component_transform();
+            Entity->Transform.Position      = Position[Idx];
+            Entity->Transform.EulerRotation = EulerAngles[Idx];
+            Entity->Transform.Scale         = Scale[Idx];
+            Entity->Renderable = Renderable;
+            Entity->Physics = Physics;
+            Entity->IsActive = true;
+            EntityCount++;
+        }
     } else {
         Error("Renderable allocation failed");
     }
