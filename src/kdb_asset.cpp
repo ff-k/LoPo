@@ -694,7 +694,7 @@ kadabra::asset_manager::LoadGizmo(){
             Log("Loaded successfully");
             Success = true;
             
-            //Gizmo.TranslateAndScale(true, true, 100.0f);
+            // Gizmo.TranslateAndScale(true, true, 100.0f);
             Gizmo.ComputePerFaceAttribute(true);
         }
 
@@ -767,7 +767,7 @@ kadabra::asset_manager::Initialise(u32 MeshFileCount, char **MeshFilePaths,
         if(LoPoTextures[Idx].Load(LoPoTexturePaths[Idx])){
             LoPoMaterials[Idx].Shader = ShaderType_Standard;
             LoPoMaterials[Idx].Texture = &LoPoTextures[Idx];
-            LoPoMaterials[Idx].AmbientLight = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+            LoPoMaterials[Idx].AmbientLight = Vec4(0.3f, 0.3f, 0.3f, 1.0f);
         } else {
             Error("LoPoTextures[%u] could not be loaded", Idx);
         }

@@ -23,6 +23,16 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     
     ActiveCameraIndex = 0;
     
+    ShowGizmo = true;
+    
+    GizmoTransform = component_transform();
+    GizmoRenderable.Material = &AssetManager->MaterialOpaque;
+    GizmoRenderable.Mesh = &AssetManager->Gizmo;
+    GizmoRenderable.RenderMeshAABB = false;
+    GizmoRenderable.ToBeRendered = true;
+    GizmoSphereRadius = 200.0f;
+
+    
     u32 SceneObjectCount = 5;
     
     Assert(SceneObjectCount <= SceneCapacity);
@@ -31,11 +41,11 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     if(platform::MemoryAllocate((void **)&Renderables, 
                                 sizeof(component_renderable)*SceneObjectCount)){
         
-        u32 CeilingEntityIdx  = 0;
-        u32 FloorEntityIdx    = 1;
-        u32 PlatformEntityIdx = 2;
-        u32 FliTriEntityIdx   = 3;
-        u32 IcosphereEntityIdx   = 4;
+        u32 CeilingEntityIdx   = 0;
+        u32 FloorEntityIdx     = 1;
+        u32 PlatformEntityIdx  = 2;
+        u32 FliTriEntityIdx    = 3;
+        u32 IcosphereEntityIdx = 4;
         
         component_renderable *CeilingRenderable = Renderables + CeilingEntityIdx;
         CeilingRenderable->Material = &AssetManager->LoPoMaterials[AssetManager->CeilingIdx];
@@ -45,9 +55,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         
         entity *Ceiling = Entities + CeilingEntityIdx;
         Ceiling->Transform = component_transform();
-        Ceiling->Transform.Position      = Vec3(0.0f, 15.0f, 0.0f);
-        Ceiling->Transform.EulerRotation = Vec3(180.0f, 0.0f, 0.0f);
-        Ceiling->Transform.Scale         = Vec3(1.0f, 1.0f, 1.0f);
+        Ceiling->Transform.Position      = Vec3(  0.0f, 15.0f, 0.0f);
+        Ceiling->Transform.EulerRotation = Vec3(180.0f,  0.0f, 0.0f);
+        Ceiling->Transform.Scale         = Vec3(  1.0f,  7.2f, 1.0f);
         Ceiling->Renderable = CeilingRenderable;
         Ceiling->IsActive = true;
         EntityCount++;
@@ -62,7 +72,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         Floor->Transform = component_transform();
         Floor->Transform.Position      = Vec3(0.0f, 0.0f, 0.0f);
         Floor->Transform.EulerRotation = Vec3(0.0f, 0.0f, 0.0f);
-        Floor->Transform.Scale         = Vec3(1.0f, 1.0f, 1.0f);
+        Floor->Transform.Scale         = Vec3(1.0f, 7.8f, 1.0f);
         Floor->Renderable = FloorRenderable;
         Floor->IsActive = true;
         EntityCount++;
@@ -245,9 +255,9 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
                        window *Window, renderer *Renderer){
     b32 Success = true;
     
-    if(Input->IsKeyWentDown(InputKey_C)){
-        ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
-    }
+    // if(Input->IsKeyWentDown(InputKey_C)){
+    //     ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
+    // }
     
     UpdateRenderer(Input, Renderer);
     UpdateCamera(Input, Cameras+ActiveCameraIndex, ActiveCameraIndex==0);

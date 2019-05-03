@@ -705,7 +705,7 @@ namespace kadabra {
                     } break;
                     UnexpectedDefaultCase;
                 }
-        
+                
                 if(Drawable->IndexBuffer){
                     glDrawElements(Drawable->DrawMode, 
                                    Drawable->DrawElementCount,
@@ -769,7 +769,9 @@ namespace kadabra {
     
             OpenGLAssertNoError();
             
-            glClearColor(0.043137f, 0.047059f, 0.058824f, 1.0f);
+            glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
+            // glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+            // glClearColor(0.043137f, 0.047059f, 0.058824f, 1.0f);
             
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -998,7 +1000,7 @@ namespace kadabra {
         
         glFrontFace(GL_CCW);
         glCullFace(GL_BACK);
-        glEnable(GL_CULL_FACE);
+        //glEnable(GL_CULL_FACE);
     
         if(!CompileStandardShader(&StandardShader)){
             Warning("Standard shader could not be compiled");
