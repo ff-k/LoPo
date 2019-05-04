@@ -64,7 +64,7 @@ b32 kadabra::asset_mesh::ConstructBVH(){
         }
         
         BVHRoot = 0;
-        u32 BVHDepth = BVH::ConstructFromIndexedMesh(&BVHRoot, 
+        u32 BVHDepth = bvh::ConstructFromIndexedMesh(&BVHRoot, 
                                                      FacesSorted, FaceCount, 
                                                      Vertices, VertexCount, 
                                                      Indices, IndexCount);

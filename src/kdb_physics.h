@@ -3,6 +3,7 @@
 
 #include "kdb_common.h"
 #include "kdb_math.h"
+#include "kdb_component.h"
 
 namespace kadabra {
     
@@ -29,7 +30,8 @@ namespace kadabra {
             Prev_Velocity = Velocity;
         }
         
-        component_particle(vec3 Position, vec3 Velocity, vec3 Gravity, f32 Damping, b32 IsStatic){
+        component_particle(vec3 Position, vec3 Velocity, vec3 Gravity, 
+                           f32 Damping, b32 IsStatic){
             this->Position = Position;
             this->Velocity = Velocity;
             this->Gravity  = Gravity;
@@ -42,7 +44,16 @@ namespace kadabra {
         
         void Integrate(f32 DeltaTime);
         void UndoLastIntegration();
-    };    
+    };
+    
+    class physics {
+        public:
+        static b32 Collides(asset_mesh *MeshA, component_transform *XFormA, 
+                            asset_mesh *MeshB, component_transform *XFormB);
+                            
+        static b32 NarrowPhaseCollision(bvh_node *BVHNode_A, component_transform *XFormA, 
+                                        bvh_node *BVHNode_B, component_transform *XFormB);
+    };
 }
 
 #endif

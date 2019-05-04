@@ -32,13 +32,13 @@ namespace kadabra {
         b32 IsLeaf;
     };
     
-    class BVH {
+    class bvh {
         public:
-        static u32 BVH::ConstructFromIndexedMesh(bvh_node **Node, 
-                                                 u32 *Faces, u32 FaceCount, 
-                                                 vertex *Vertices, u32 VertexCount, 
-                                                 u32 *Indices, u32 IndexCount, 
-                                                 u32 Depth = 0);
+        static u32 ConstructFromIndexedMesh(bvh_node **Node, 
+                                            u32 *Faces, u32 FaceCount, 
+                                            vertex *Vertices, u32 VertexCount, 
+                                            u32 *Indices, u32 IndexCount, 
+                                            u32 Depth = 0);
     };
     
 }

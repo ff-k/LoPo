@@ -308,7 +308,8 @@ b32
 kadabra::scene::Collides(entity *Entity, entity *Other){
     
     b32 Result = false;
-    
+
+#if 0
     aabb *BB_E = 0;
     if(Entity->Renderable){
         if(Entity->Renderable->Mesh){
@@ -334,6 +335,18 @@ kadabra::scene::Collides(entity *Entity, entity *Other){
         
         Result = AABBsOverlap(BB_E_World, BB_O_World);
     }
+#else
+    Assert(Entity->Renderable);
+    Assert( Other->Renderable);
+
+    asset_mesh *Mesh_E = Entity->Renderable->Mesh;
+    asset_mesh *Mesh_O = Other->Renderable->Mesh;
+    
+    component_transform *T_E = &Entity->Transform;
+    component_transform *T_O = &Other->Transform;
+    
+    Result = physics::Collides(Mesh_E, T_E, Mesh_O, T_O);
+#endif
     
     return Result;
 }

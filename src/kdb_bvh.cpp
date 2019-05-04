@@ -1,11 +1,12 @@
 #include "kdb_bvh.h"
 #include "kdb_platform.h"
 
-u32 kadabra::BVH::ConstructFromIndexedMesh(bvh_node **Node, 
-                                           u32 *Faces, u32 FaceCount, 
-                                           vertex *Vertices, u32 VertexCount, 
-                                           u32 *Indices, u32 IndexCount, 
-                                           u32 Depth){
+u32 
+kadabra::bvh::ConstructFromIndexedMesh(bvh_node **Node, 
+                                       u32 *Faces, u32 FaceCount, 
+                                       vertex *Vertices, u32 VertexCount, 
+                                       u32 *Indices, u32 IndexCount, 
+                                       u32 Depth){
     u32 MaxLevel = 0;
     
     Assert(Node);
@@ -78,14 +79,14 @@ u32 kadabra::BVH::ConstructFromIndexedMesh(bvh_node **Node,
             u32 NextDepth = Depth + 1;
             
             (*Node)->Left = 0;
-            u32 LevelL = BVH::ConstructFromIndexedMesh(&(*Node)->Left, 
+            u32 LevelL = bvh::ConstructFromIndexedMesh(&(*Node)->Left, 
                                                        Faces, FaceCountLeft, 
                                                        Vertices, VertexCount, 
                                                        Indices, IndexCount, 
                                                        NextDepth);
 
             (*Node)->Right = 0;
-            u32 LevelR = BVH::ConstructFromIndexedMesh(&(*Node)->Right, 
+            u32 LevelR = bvh::ConstructFromIndexedMesh(&(*Node)->Right, 
                                                        Faces+FaceCountLeft, 
                                                        FaceCount-FaceCountLeft, 
                                                        Vertices, VertexCount, 
