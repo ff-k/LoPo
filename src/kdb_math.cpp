@@ -370,3 +370,29 @@ kadabra::AABBTransformInPlace(kadabra::aabb *AABB,
     AABB->Min = Min;
     AABB->Max = Max;
 }
+
+void 
+kadabra::TriangleTransformInPlace(kadabra::vec3 *V0, 
+                                  kadabra::vec3 *V1, 
+                                  kadabra::vec3 *V2, 
+                                  kadabra::vec3 Translation, 
+                                  kadabra::vec3 EulerAngles, 
+                                  kadabra::vec3 Scale){
+    mat4 ModelMatrix = Mat4Identity();
+    ModelMatrix = Mat4Translate(ModelMatrix, Translation);
+    
+    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.z,
+                             RotationAxis_Z);
+    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.y,
+                             RotationAxis_Y);
+    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.x,
+                             RotationAxis_X);
+                             
+    ModelMatrix = Mat4Scale(ModelMatrix, Scale);
+    
+    vec3 T0 = (ModelMatrix*Vec4(*V0, 1.0f)).xyz;
+    vec3 T1 = (ModelMatrix*Vec4(*V1, 1.0f)).xyz;
+    vec3 T2 = (ModelMatrix*Vec4(*V2, 1.0f)).xyz;
+    
+    *V0 = T0; *V1 = T1; *V2 = T2;
+}

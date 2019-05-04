@@ -101,7 +101,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
-            // if(Idx == 0 || Idx == 1 || Idx == 3){
+            // if(Idx == 2){
             //     continue;
             // }
             

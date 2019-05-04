@@ -14,14 +14,14 @@ kadabra::bvh::ConstructFromIndexedMesh(bvh_node **Node,
     
     Assert(FaceCount);
     
-    static u32 AllocCount;
-    
-    if(Depth == 0){
-        AllocCount = 0;
-    }
+    // static u32 AllocCount;
+    // 
+    // if(Depth == 0){
+    //     AllocCount = 0;
+    // }
     
     if(platform::MemoryAllocate((void **)Node, sizeof(bvh_node))){
-        AllocCount++;
+        // AllocCount++;
         
         vec3 Min = Vec3(f32_Max, f32_Max, f32_Max);
         vec3 Max = Vec3(f32_Min, f32_Min, f32_Min);
@@ -105,9 +105,9 @@ kadabra::bvh::ConstructFromIndexedMesh(bvh_node **Node,
         Error("BVH construction has failed");
     }
     
-    if(Depth == 0){
-        printf("AllocCount: %5u, AllocBytes: %6u, ", AllocCount, (AllocCount*sizeof(bvh_node)));
-    }
+    // if(Depth == 0){
+    //     printf("AllocCount: %5u, AllocBytes: %6u, ", AllocCount, (AllocCount*sizeof(bvh_node)));
+    // }
     
     return MaxLevel;
 }

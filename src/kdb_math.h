@@ -571,6 +571,9 @@ namespace kadabra {
     void AABBTransformInPlace(aabb *AABB, vec3 Translation, 
                               vec3 EulerAngles, vec3 Scale);
     
+    void TriangleTransformInPlace(vec3 *V0, vec3 *V1, vec3 *V2, 
+                                  vec3 Translation, 
+                                  vec3 EulerAngles, vec3 Scale);
 }
 
 #endif

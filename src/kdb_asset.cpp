@@ -53,7 +53,7 @@ b32 kadabra::asset_mesh::ConstructBVH(){
     
     Assert(IndexCount > 0);
     
-    printf("FaceCount: %4u, ", FaceCount);
+    // printf("FaceCount: %4u, ", FaceCount);
     
     u32 *FacesSorted = 0;
     if(platform::MemoryAllocate((void **)&FacesSorted, 
@@ -69,8 +69,7 @@ b32 kadabra::asset_mesh::ConstructBVH(){
                                                      Vertices, VertexCount, 
                                                      Indices, IndexCount);
                                                      
-        printf("BVHDepth: %2u", BVHDepth);
-                                                     
+        // printf("BVHDepth: %2u", BVHDepth);
         if(BVHDepth){
             Success = true;
         } else {
@@ -81,7 +80,7 @@ b32 kadabra::asset_mesh::ConstructBVH(){
         platform::MemoryFree((void **)&FacesSorted);
     }
     
-    printf("\n");
+    // printf("\n");
     
     return Success;
 }
