@@ -573,12 +573,12 @@ namespace kadabra {
                                    vec3 EulerAngles, 
                                    vec3 Scale);
     
-    void AABBTransformInPlace(aabb *AABB, vec3 Translation, 
-                              vec3 EulerAngles, vec3 Scale);
+    void AABBTransformInPlace(aabb *AABB, mat4 *XForm);
     
     void TriangleTransformInPlace(vec3 *V0, vec3 *V1, vec3 *V2, 
-                                  vec3 Translation, 
-                                  vec3 EulerAngles, vec3 Scale);
+                                  mat4 *XForm);
+                                  
+    void TransformInPlace(vec3 *V, vec3 EulerAngles, vec3 Scale);
 }
 
 #endif

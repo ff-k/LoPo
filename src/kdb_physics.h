@@ -14,7 +14,9 @@ namespace kadabra {
         vec3 Velocity;
         vec3 Gravity;
         f32  Damping;
+        f32  Restitution;
         b32  IsStatic;
+        b32  IsActive;
         
         vec3 Next_Position;
         vec3 Next_Velocity;
@@ -22,11 +24,13 @@ namespace kadabra {
         vec3 Prev_Velocity;
         
         component_particle(){
-            Position = Vec3(0.0f, 0.0f, 0.0f);
-            Velocity = Vec3(0.0f, 0.0f, 0.0f);
-            Gravity  = Vec3(0.0f, 0.0f, 0.0f);
-            Damping  = 0.0f;
-            IsStatic = false;
+            Position    = Vec3(0.0f, 0.0f, 0.0f);
+            Velocity    = Vec3(0.0f, 0.0f, 0.0f);
+            Gravity     = Vec3(0.0f, 0.0f, 0.0f);
+            Damping     = 0.0f;
+            Restitution = 0.0f;
+            IsStatic    = false;
+            IsActive    = false;
             
             Prev_Position = Position;
             Prev_Velocity = Velocity;
@@ -35,12 +39,14 @@ namespace kadabra {
         }
         
         component_particle(vec3 Position, vec3 Velocity, vec3 Gravity, 
-                           f32 Damping, b32 IsStatic){
-            this->Position = Position;
-            this->Velocity = Velocity;
-            this->Gravity  = Gravity;
-            this->Damping  = Damping;
-            this->IsStatic = IsStatic;
+                           f32 Damping, f32 Restitution, b32 IsStatic){
+            this->Position    = Position;
+            this->Velocity    = Velocity;
+            this->Gravity     = Gravity;
+            this->Damping     = Damping;
+            this->Restitution = Restitution;
+            this->IsStatic    = IsStatic;
+            this->IsActive    = false;
             
             Prev_Position = Position;
             Prev_Velocity = Velocity;
@@ -69,12 +75,12 @@ namespace kadabra {
     class physics {
         public:
         
-        static collision_response Collides(asset_mesh *MeshA, component_transform *XFormA, 
-                                           asset_mesh *MeshB, component_transform *XFormB, 
+        static collision_response Collides(asset_mesh *MeshA, mat4 *XFormA, 
+                                           asset_mesh *MeshB, mat4 *XFormB, 
                                            vec3 RelativeDeltaPosition);
                             
-        static collision_response NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, component_transform *XFormA, 
-                                                       asset_mesh *MeshB, bvh_node *BVHNodeB, component_transform *XFormB, 
+        static collision_response NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, mat4 *XFormA, 
+                                                       asset_mesh *MeshB, bvh_node *BVHNodeB, mat4 *XFormB, 
                                                        vec3 RelativeDeltaPosition);
     };
     

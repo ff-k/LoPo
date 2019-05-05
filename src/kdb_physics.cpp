@@ -10,6 +10,8 @@ kadabra::component_particle::PrepareIntegration(f32 DeltaTime){
 
 void 
 kadabra::component_particle::ApplyIntegration(){
+    Assert(IsActive);
+    
     Prev_Position = Position;
     Prev_Velocity = Velocity;
     
@@ -51,8 +53,8 @@ kadabra::component_particle::GetDeltaVelocity(){
 }
 
 kadabra::collision_response 
-kadabra::physics::Collides(asset_mesh *MeshA, component_transform *XFormA, 
-                           asset_mesh *MeshB, component_transform *XFormB, 
+kadabra::physics::Collides(asset_mesh *MeshA, mat4 *XFormA, 
+                           asset_mesh *MeshB, mat4 *XFormB, 
                            vec3 RelativeDeltaPosition){
     collision_response Result;
     
@@ -70,17 +72,17 @@ kadabra::physics::Collides(asset_mesh *MeshA, component_transform *XFormA,
 }
 
 kadabra::collision_response 
-kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, component_transform *XFormA, 
-                                       asset_mesh *MeshB, bvh_node *BVHNodeB, component_transform *XFormB, 
+kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, mat4 *XFormA, 
+                                       asset_mesh *MeshB, bvh_node *BVHNodeB, mat4 *XFormB, 
                                        vec3 RelativeDeltaPosition){
     collision_response Result;
     Result.Collided = false;
 
     aabb BB_A = BVHNodeA->AABB;
-    AABBTransformInPlace(&BB_A, XFormA->Position, XFormA->EulerRotation, XFormA->Scale);
+    AABBTransformInPlace(&BB_A, XFormA);
     
     aabb BB_B = BVHNodeB->AABB;
-    AABBTransformInPlace(&BB_B, XFormB->Position, XFormB->EulerRotation, XFormB->Scale);
+    AABBTransformInPlace(&BB_B, XFormB);
     
     if(AABBsOverlap(BB_A, BB_B)){
         if(BVHNodeA->IsLeaf){
@@ -114,8 +116,8 @@ kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, co
                 vec3 V1B = MeshB->Vertices[I1B].Position;
                 vec3 V2B = MeshB->Vertices[I2B].Position;
                 
-                TriangleTransformInPlace(&V0A, &V1A, &V2A, XFormA->Position, XFormA->EulerRotation, XFormA->Scale);
-                TriangleTransformInPlace(&V0B, &V1B, &V2B, XFormB->Position, XFormB->EulerRotation, XFormB->Scale);
+                TriangleTransformInPlace(&V0A, &V1A, &V2A, XFormA);
+                TriangleTransformInPlace(&V0B, &V1B, &V2B, XFormB);
                 
                 Result = gjk::Run(V0A, V1A, V2A, V0B, V1B, V2B, RelativeDeltaPosition);
                 
@@ -174,9 +176,12 @@ kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B, ve
     
     collision_response Result;
     
-    const f32 GJKErrorTolerance = 0.000001f;
-               
+    const f32 GJKErrorTolerance = 0.0001f;
+    const u32 MaxIter = 12;
+    
     // TODO(furkan): T and N does not return properly
+    // Disable R until this problem is solved.
+    R = Vec3(0.0f, 0.0f, 0.0f);
     f32  T = 0.0f;
     vec3 S = Vec3(0.0f, 0.0f, 0.0f);
     vec3 N = Vec3(0.0f, 0.0f, 0.0f);
@@ -185,16 +190,20 @@ kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B, ve
     u32  K = 0;
     
     b32 Collided = true;
-    f32  V_norm2 = V.x*V.x + V.y*V.y + V.z*V.z;
-    while(Collided && 
+    u32 Iter = 0;
+    f32 V_norm2 = V.x*V.x + V.y*V.y + V.z*V.z;
+    while(Iter < MaxIter && Collided && 
           V_norm2 > GJKErrorTolerance){
+        
+        Iter++;
         
         vec3 P = TriangleSupport(V0A, V1A, V2A, -V) - 
                  TriangleSupport(V0B, V1B, V2B,  V);
         
         f32 DotVP = Dot(V, P);
         f32 DotVR = Dot(V, R);
-        if(DotVP > T*DotVR){
+        if(DotVP > -GJKErrorTolerance && 
+           DotVP > T*DotVR){
             if(DotVR > 0.0f){
                 T = DotVP / DotVR;
                 Assert(T >= 0.0f);

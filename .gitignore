@@ -1,7 +1,13 @@
 *.db
+
 bin/x64/*.exe
 bin/x64/*.pdb
 bin/x64/*.obj
+bin/x64/.vs/
+bin/x64/kdb.sln
+
 bin/x86/*.exe
 bin/x86/*.pdb
 bin/x86/*.obj
+bin/x86/.vs/
+bin/x86/kdb.sln

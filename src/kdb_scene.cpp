@@ -33,7 +33,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     GizmoSphereRadius = 200.0f;
 
     
-    u32 SceneObjectCount = 5;
+    u32 SceneObjectCount = 6;
     
     Assert(SceneObjectCount <= SceneCapacity);
     
@@ -49,23 +49,32 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             AssetManager->FloorIdx,
             AssetManager->PlatformIdx,
             AssetManager->FliTriIdx,
-            AssetManager->IcosphereIdx
+            AssetManager->IcosphereIdx,
+            
+            AssetManager->SphereIdx,
+            AssetManager->SphereIdx,
         };
         
         vec3 Position[] = {
-            Vec3( 0.0f, 15.0f,  0.0f),
-            Vec3( 0.0f,  0.0f,  0.0f), 
-            Vec3( 0.0f,  4.3f,  0.0f),
-            Vec3(-0.5f,  7.5f, 16.0f),
-            Vec3( 0.0f,  8.0f,  0.0f)
+            Vec3( 0.00f, 15.00f,  0.00f),
+            Vec3( 0.00f,  0.00f,  0.00f), 
+            Vec3( 0.00f,  4.30f,  0.00f),
+            Vec3(-0.50f,  7.50f, 16.00f),
+            Vec3( 0.00f,  7.48f,  0.00f),
+            
+            Vec3(-0.21f,  7.48f,  0.07f),
+            Vec3(-0.21f,  7.48f,  0.07f),
         };
         
         vec3 EulerAngles[] = {
-            Vec3(180.0f, 0.0f, 0.0f),
+            Vec3(180.0f,  0.000f, 0.0f),
+            Vec3(  0.0f,  0.000f, 0.0f),
+            Vec3(  0.0f,  0.000f, 0.0f),
+            Vec3(  0.0f,  0.000f, 0.0f),
+            Vec3(  0.0f,-71.565f, 0.0f),
+            
             Vec3(  0.0f, 0.0f, 0.0f),
             Vec3(  0.0f, 0.0f, 0.0f),
-            Vec3(  0.0f, 0.0f, 0.0f),
-            Vec3(  0.0f, 0.0f, 0.0f)
         };
         
         vec3 Scale[] = {
@@ -73,7 +82,10 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(1.00f, 7.80f, 1.00f),
             Vec3(1.50f, 1.50f, 1.50f),
             Vec3(0.33f, 0.33f, 0.33f),
-            Vec3(0.20f, 0.20f, 0.20f)
+            Vec3(0.20f, 0.20f, 0.20f),
+            
+            Vec3(0.02f, 0.02f, 0.02f),
+            Vec3(0.02f, 0.02f, 0.02f),
         };
         
         vec3 Velocity[] = {
@@ -81,6 +93,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3( -1.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
+            
+            Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
         };
         
@@ -90,39 +105,37 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f, -1.0f, 0.0f),
+            
+            Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
         };
         
         f32 Damping[] = {
-            0.0f, 0.0f, 0.0f, 0.99f, 0.95f
+            0.0f, 0.0f, 0.0f, 0.99f, 0.95f, 0.99f, 0.99f
+        };
+        
+        f32 Restitution[] = {
+            0.0f, 0.0f, 0.0f, 0.0, 0.0f, 0.0f, 0.0f
+        };
+        
+        b32 IsActive[] = {
+            true, true, true, true, true, false, false
         };
         
         b32 IsStatic[] = {
-            true, true, true, false, false
+            true, true, true, false, false, false, false
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
-            // if(Idx == 0){
-            //     continue;
-            // }
-            // 
-            // if(Idx == 1){
-            //     continue;
-            // }
-            // 
-            // if(Idx == 2){
-            //     continue;
-            // }
-            // 
-            // if(Idx == 3){
-            //     continue;
-            // }
-            // 
-            // if(Idx == 4){
+            // if(Idx != 2 && Idx != 4){
             //     continue;
             // }
             
             component_particle *Physics = PhysicsCompos + EntityCount;
-            *Physics = component_particle(Position[Idx], Velocity[Idx], Gravity[Idx], Damping[Idx], IsStatic[Idx]);
+            *Physics = component_particle(Position[Idx], Velocity[Idx], 
+                                          Gravity[Idx], Damping[Idx], 
+                                          Restitution[Idx], IsStatic[Idx]);
+            Physics->IsActive = IsActive[Idx];
             
             component_renderable *Renderable = Renderables + EntityCount;
             Renderable->Material = &AssetManager->LoPoMaterials[Material[Idx]];
@@ -157,6 +170,14 @@ kadabra::scene::UpdateRenderer(input *Input, renderer *Renderer){
 
     if(Input->IsKeyDown(InputKey_3)){
         Renderer->PolygonMode = RendererPolygonMode_Point;
+    }
+    
+    if(Input->IsKeyWentDown(InputKey_4)){
+        for(u32 Idx=0; Idx<EntityCount; Idx++){
+            entity *E = Entities + Idx;
+            component_renderable *R = E->Renderable;
+            R->RenderMeshAABB = !R->RenderMeshAABB;
+        }
     }
 }
 
@@ -279,22 +300,107 @@ kadabra::scene::UpdateGizmo(window *Window){
 
 }
 
+void 
+kadabra::scene::UpdatePhysics(f32 DeltaTime){
+    // printf("FRAME BEGIN\n");
+    f32 UpdateTimeRemaining = DeltaTime;
+    while(UpdateTimeRemaining > 0.0f){
+        f32 dt = MinOf(FixedDeltaTime, UpdateTimeRemaining);
+        
+        // printf("UPDATE BEGIN // dt:%f\n", dt);
+        for(u32 Idx=0; Idx<EntityCount; Idx++){
+            entity *E = Entities + Idx;
+            component_transform *Transform = &E->Transform;
+            component_particle *Physics = E->Physics;
+            if(Physics){
+                if(Physics->IsActive && 
+                   Physics->IsStatic == false){
+                    
+                    Physics->PrepareIntegration(dt);
+                    Transform->Position = Physics->Position;
+                    
+                    b32 Blocked = false;
+                    for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
+                        if(Idx != Jdx){
+                            entity *Other = Entities + Jdx;
+                            component_particle *OtherPhy = Other->Physics;
+                            if(OtherPhy && OtherPhy->IsActive){
+                                collision_response Response = Collides(E, Other, 
+                                                                       Physics, 
+                                                                       OtherPhy);
+                                
+                                if(Response.Collided){
+                                    Blocked = true;
+                                    
+                                    // if(Idx == 5){
+                                    //     printf("Collided!");
+                                    // }
+                                    
+                                    // Physics->Position -= Physics->GetDeltaPosition();
+                                    
+                                    vec3 V = Physics->Velocity;
+                                    f32  Vlength = Length(V);
+                                    if(Vlength){
+                                        Assert(Other->Renderable);
+                                        asset_mesh *Mesh_O = Other->Renderable->Mesh;
+                                        
+                                        component_transform *T_O = &Other->Transform;
+                                        vec3 N = Mesh_O->FaceNormals[Response.CollidingFaceIdxB];
+                                        TransformInPlace(&N, T_O->EulerRotation, T_O->Scale);
+                                        N = Normalize(N);
+                                        
+                                        Assert(Abs(1.0f-Length(N)) < 0.000001f);
+                                        
+                                        f32  DotNV = Dot(N, V);
+                                        if(DotNV < 0.0f){
+                                            vec3 Vproj = (DotNV/Vlength)*V;
+                                        
+                                            f32 Restitution = Physics->Restitution;
+                                            V = V + (1.0f + Restitution)*Vproj;
+                                            Physics->Velocity = V;
+                                        }
+                                    }
+                                }
+                                
+                                // if(E->Renderable){
+                                //     asset_mesh *Mesh_E = E->Renderable->Mesh;
+                                //     if(Response.Collided){
+                                //         Mesh_E->CollidingFaceIdx = Response.CollidingFaceIdxA;
+                                //     } else {
+                                //         Mesh_E->CollidingFaceIdx = u32_Max;
+                                //     }
+                                // }
+                                // 
+                                // if(Other->Renderable){
+                                //     asset_mesh *Mesh_O = Other->Renderable->Mesh;
+                                //     if(Response.Collided){
+                                //         Mesh_O->CollidingFaceIdx = Response.CollidingFaceIdxB;
+                                //     } else {
+                                //         Mesh_O->CollidingFaceIdx = u32_Max;
+                                //     }
+                                // }
+                            }
+                        }
+                    }
+                    
+                    if(!Blocked){
+                        Physics->ApplyIntegration();
+                    }
+                    
+                    Transform->Position = Physics->Position;
+                }
+            }
+        }
+        UpdateTimeRemaining -= dt;
+        // printf("UPDATE END\n");
+    }
+    // printf("FRAME END\n");
+}
+
 b32 
 kadabra::scene::Update(asset_manager *AssetManager, input *Input, 
                        window *Window, renderer *Renderer){
     b32 Success = true;
-    
-    // TODO(furkan): Pause, NextFrame, PlayIfPressed etc
-    static b32 FramePlaying = true;
-    if(Input->IsKeyWentDown(InputKey_B)){
-        FramePlaying = !FramePlaying;
-    }
-    
-    b32 FrameUpdate = FramePlaying;
-    if(Input->IsKeyDown(InputKey_M) || 
-       Input->IsKeyWentDown(InputKey_N)){
-        FrameUpdate = true;
-    }
     
     // if(Input->IsKeyWentDown(InputKey_C)){
     //     ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
@@ -306,88 +412,59 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdateGizmo(Window);
     }
     
-    if(FrameUpdate){
-        // printf("FRAME BEGIN\n");
-        f32 UpdateTimeRemaining = Input->DeltaTime;
-        while(UpdateTimeRemaining > 0.0f){
-            f32 dt = MinOf(FixedDeltaTime, UpdateTimeRemaining);
-            
-            // printf("UPDATE BEGIN // dt:%f\n", dt);
-            for(u32 Idx=0; Idx<EntityCount; Idx++){
-                entity *E = Entities + Idx;
-                component_particle *Physics = E->Physics;
-                if(Physics){
-                    if(Physics->IsStatic == false){
-                        
-                        Physics->PrepareIntegration(dt);
-                        
-                        b32 Blocked = false;
-                        for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
-                            if(Idx != Jdx){
-                                entity *Other = Entities + Jdx;
-                                component_particle *OtherPhy = Other->Physics;
-                                if(OtherPhy){
-                                    collision_response Response = Collides(E, Other, 
-                                                                           Physics, 
-                                                                           OtherPhy);
-                                    
-                                    if(Response.Collided){
-                                        Blocked = true;
-                                        
-                                        Assert(Other->Renderable);
-                                        asset_mesh *Mesh_O = Other->Renderable->Mesh;
-                                        vec3 N = Mesh_O->FaceNormals[Response.CollidingFaceIdxB];
-                                        
-                                        Assert(Abs(1.0f-Length(N)) < 0.000001f);
-                                        
-                                        Physics->Position += N*0.01f;
-                                        
-                                        vec3 V = Physics->Velocity;
-                                        f32  Vlength = Length(V);
-                                        if(Vlength){
-                                            vec3 Vproj = (Dot(N, V)/Vlength)*V;
-                                            
-                                            f32 Restitution = 1.0f;
-                                            V = V + (1.0f + Restitution)*Vproj;
-                                            Physics->Velocity = V;
-                                        }
-                                    }
-                                    
-                                    // if(E->Renderable){
-                                    //     asset_mesh *Mesh_E = E->Renderable->Mesh;
-                                    //     if(Response.Collided){
-                                    //         Mesh_E->CollidingFaceIdx = Response.CollidingFaceIdxA;
-                                    //     } else {
-                                    //         Mesh_E->CollidingFaceIdx = u32_Max;
-                                    //     }
-                                    // }
-                                    // 
-                                    // if(Other->Renderable){
-                                    //     asset_mesh *Mesh_O = Other->Renderable->Mesh;
-                                    //     if(Response.Collided){
-                                    //         Mesh_O->CollidingFaceIdx = Response.CollidingFaceIdxB;
-                                    //     } else {
-                                    //         Mesh_O->CollidingFaceIdx = u32_Max;
-                                    //     }
-                                    // }
-                                }
-                            }
-                        }
-                        
-                        if(!Blocked){
-                            Physics->ApplyIntegration();
-                        }
-                        
-                        component_transform *Transform = &E->Transform;
-                        Transform->Position = Physics->Position;
-                    }
-                }
-            }
-            UpdateTimeRemaining -= dt;
-            // printf("UPDATE END\n");
-        }
-        // printf("FRAME END\n");
+    static b32 FramePlaying = true;
+    if(Input->IsKeyWentDown(InputKey_B)){
+        FramePlaying = !FramePlaying;
     }
+    
+    b32 FrameUpdate = FramePlaying;
+    if(Input->IsKeyDown(InputKey_M) || 
+       Input->IsKeyWentDown(InputKey_N)){
+        FrameUpdate = true;
+    }
+    
+    if(FrameUpdate){
+        UpdatePhysics(Input->DeltaTime);
+    }
+    
+    component_transform *T = &Entities[5].Transform;
+    if(Input->IsKeyDown(InputKey_ArrowUp)){
+        T->Position.z += 0.01f;
+    }
+    
+    if(Input->IsKeyDown(InputKey_ArrowDown)){
+        T->Position.z -= 0.01f;
+    }
+    
+    if(Input->IsKeyDown(InputKey_ArrowLeft)){
+        T->Position.x -= 0.01f;
+    }
+    
+    if(Input->IsKeyDown(InputKey_ArrowRight)){
+        T->Position.x += 0.01f;
+    }
+    
+    vec3 HeroP = Entities[4].Transform.Position;
+    vec3 HeroForward = RotateAround(Vec3(0.0f, 0.0f, 1.0f), 
+                                    Entities[4].Transform.EulerRotation.y,
+                                    Vec3(0.0f, 1.0f, 0.0f));
+    // Entities[5].Transform.Position = HeroP + HeroForward*0.283f;
+    if(Input->IsMouseButtonWentDown(InputMouseButton_Left)){
+        Entities[5].Transform.Position = HeroP + HeroForward*0.283f;
+        
+        HeroForward = RotateAround(HeroForward, 
+                                   -45.0f, 
+                                   Normalize(Cross(Vec3(0.0f, 1.0f, 0.0f), 
+                                                   HeroForward)));
+       
+        component_particle *Physics = Entities[5].Physics; // Entities[6].Physics;
+        Physics->Position = Entities[5].Transform.Position;
+        Physics->Velocity = HeroForward*10.0f;
+        Physics->IsActive = true;
+    }
+    
+    // vec3 P = Entities[5].Transform.Position; // Entities[6].Transform.Position;
+    // printf("(%f %f %f)\n", P.x, P.y, P.z);
     
     return Success;
 }
@@ -406,13 +483,20 @@ kadabra::scene::Collides(entity *Entity, entity *Other,
     component_transform *T_E = &Entity->Transform;
     component_transform *T_O = &Other->Transform;
     
+    mat4 XForm_E = BuildTransformationMatrix(T_E->Position, 
+                                             T_E->EulerRotation, 
+                                             T_E->Scale);
+    mat4 XForm_O = BuildTransformationMatrix(T_O->Position, 
+                                             T_O->EulerRotation, 
+                                             T_O->Scale);
+    
     vec3 DeltaP_E = Physics->GetDeltaPosition();
     vec3 DeltaP_O = OtherPhy->GetDeltaPosition();
     
     vec3 RelDeltaP = DeltaP_O - DeltaP_E;
     
-    collision_response Response = physics::Collides(Mesh_E, T_E, 
-                                                    Mesh_O, T_O, 
+    collision_response Response = physics::Collides(Mesh_E, &XForm_E, 
+                                                    Mesh_O, &XForm_O, 
                                                     RelDeltaP);
     
     return Response;
