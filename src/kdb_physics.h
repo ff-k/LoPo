@@ -13,6 +13,8 @@ namespace kadabra {
         vec3 Position;
         vec3 Velocity;
         vec3 Gravity;
+        vec3 TotalForce;
+        f32  InverseMass; // TODO(furkan): Set this properly
         f32  Damping;
         f32  Restitution;
         b32  IsStatic;
@@ -27,6 +29,8 @@ namespace kadabra {
             Position    = Vec3(0.0f, 0.0f, 0.0f);
             Velocity    = Vec3(0.0f, 0.0f, 0.0f);
             Gravity     = Vec3(0.0f, 0.0f, 0.0f);
+            TotalForce  = Vec3(0.0f, 0.0f, 0.0f);
+            InverseMass = 1.0f;
             Damping     = 0.0f;
             Restitution = 0.0f;
             IsStatic    = false;
@@ -43,6 +47,8 @@ namespace kadabra {
             this->Position    = Position;
             this->Velocity    = Velocity;
             this->Gravity     = Gravity;
+            this->TotalForce  = Vec3(0.0f, 0.0f, 0.0f);
+            this->InverseMass = 1.0f;
             this->Damping     = Damping;
             this->Restitution = Restitution;
             this->IsStatic    = IsStatic;
@@ -54,6 +60,7 @@ namespace kadabra {
             Next_Velocity = Velocity;
         }
         
+        void AddForce(vec3 Force);
         void Integrate(f32 DeltaTime);
         void PrepareIntegration(f32 DeltaTime);
         void ApplyIntegration();

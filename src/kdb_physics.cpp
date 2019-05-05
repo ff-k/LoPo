@@ -1,11 +1,21 @@
 #include "kdb_physics.h"
 
 void 
+kadabra::component_particle::AddForce(kadabra::vec3 Force){
+    TotalForce += Force;
+}
+
+void 
 kadabra::component_particle::PrepareIntegration(f32 DeltaTime){
     Next_Position = Position + Velocity*DeltaTime;
     
     vec3 Acceleration = Gravity;
+    Acceleration += TotalForce*InverseMass;
+    
     Next_Velocity = (Velocity + Acceleration*DeltaTime) * Power(Damping, DeltaTime);
+    
+    // TODO(furkan): Clear TotalForce in ApplyIntegration??
+    TotalForce = Vec3(0.0f, 0.0f, 0.0f);
 }
 
 void 

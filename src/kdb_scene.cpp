@@ -34,7 +34,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
 
     //
     
-    u32 SceneObjectCount = 7;
+    SpringActive = false;
+    SpringJointCount = 3;
+    u32 SceneObjectCount = 6 + 1 + SpringJointCount;
     
     Assert(SceneObjectCount <= SceneCapacity);
     
@@ -51,9 +53,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             AssetManager->PlatformIdx,
             AssetManager->FliTriIdx,
             AssetManager->IcosphereIdx,
+            AssetManager->SphereIdx,
             
-            AssetManager->SphereIdx,
-            AssetManager->SphereIdx,
+            AssetManager->CubeOutwardIdx,
         };
         
         vec3 Position[] = {
@@ -62,8 +64,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3( 0.00f,  4.30f,  0.00f),
             Vec3(-0.50f,  7.50f, 16.00f),
             Vec3( 0.00f,  7.48f,  0.00f),
-            
             Vec3(-0.21f,  7.48f,  0.07f),
+            
             Vec3(-0.21f,  7.48f,  0.07f),
         };
         
@@ -73,8 +75,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.000f, 0.0f),
             Vec3(  0.0f,  0.000f, 0.0f),
             Vec3(  0.0f,-71.565f, 0.0f),
-            
             Vec3(  0.0f, 0.0f, 0.0f),
+            
             Vec3(  0.0f, 0.0f, 0.0f),
         };
         
@@ -84,8 +86,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(1.50f, 1.50f, 1.50f),
             Vec3(0.33f, 0.33f, 0.33f),
             Vec3(0.20f, 0.20f, 0.20f),
-            
             Vec3(0.02f, 0.02f, 0.02f),
+            
             Vec3(0.02f, 0.02f, 0.02f),
         };
         
@@ -95,8 +97,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3( -1.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
-            
             Vec3(  0.0f,  0.0f, 0.0f),
+            
             Vec3(  0.0f,  0.0f, 0.0f),
         };
         
@@ -106,25 +108,34 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f, -1.0f, 0.0f),
-            
             Vec3(  0.0f,  0.0f, 0.0f),
+            
             Vec3(  0.0f,  0.0f, 0.0f),
         };
         
         f32 Damping[] = {
-            0.0f, 0.0f, 0.0f, 0.99f, 0.95f, 0.99f, 0.99f
+            0.0f, 0.0f, 0.0f, 0.99f, 0.95f, 0.99f, 
+            0.99f
         };
         
         f32 Restitution[] = {
-            0.0f, 0.0f, 0.0f, 0.0, 0.0f, 0.0f, 0.0f
+            0.0f, 0.0f, 0.0f, 0.0, 0.0f, 0.0f, 
+            0.0f
         };
         
-        b32 IsActive[] = {
-            true, true, true, true, true, false, false
+        b32 PhysicsActive[] = {
+            true, true, true, true, true, false, 
+            false
+        };
+        
+        b32 EntityActive[] = {
+            true, false, true, false, true, true, 
+            false
         };
         
         b32 IsStatic[] = {
-            true, true, true, false, false, false, false
+            true, true, true, false, false, false, 
+            false
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
@@ -132,26 +143,28 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             //     continue;
             // }
             
+            u32 ArrIdx = (Idx < 6) ? Idx : 6;
+            
             component_particle *Physics = PhysicsCompos + EntityCount;
-            *Physics = component_particle(Position[Idx], Velocity[Idx], 
-                                          Gravity[Idx], Damping[Idx], 
-                                          Restitution[Idx], IsStatic[Idx]);
-            Physics->IsActive = IsActive[Idx];
+            *Physics = component_particle(Position[ArrIdx], Velocity[ArrIdx], 
+                                          Gravity[ArrIdx], Damping[ArrIdx], 
+                                          Restitution[ArrIdx], IsStatic[ArrIdx]);
+            Physics->IsActive = PhysicsActive[ArrIdx];
             
             component_renderable *Renderable = Renderables + EntityCount;
-            Renderable->Material = &AssetManager->LoPoMaterials[Material[Idx]];
-            Renderable->Mesh = AssetManager->Meshes + Material[Idx];
+            Renderable->Material = &AssetManager->LoPoMaterials[Material[ArrIdx]];
+            Renderable->Mesh = AssetManager->Meshes + Material[ArrIdx];
             Renderable->RenderMeshAABB = false;
             Renderable->ToBeRendered = true;
             
             entity *Entity = Entities + EntityCount;
             Entity->Transform = component_transform();
-            Entity->Transform.Position      = Position[Idx];
-            Entity->Transform.EulerRotation = EulerAngles[Idx];
-            Entity->Transform.Scale         = Scale[Idx];
+            Entity->Transform.Position      = Position[ArrIdx];
+            Entity->Transform.EulerRotation = EulerAngles[ArrIdx];
+            Entity->Transform.Scale         = Scale[ArrIdx];
             Entity->Renderable = Renderable;
             Entity->Physics = Physics;
-            Entity->IsActive = true;
+            Entity->IsActive = EntityActive[ArrIdx];
             EntityCount++;
         }
     } else {
@@ -302,6 +315,84 @@ kadabra::scene::UpdateGizmo(window *Window){
 }
 
 void 
+kadabra::scene::InitialiseSpring(){
+    SpringActive = true;
+    
+    entity *Hand         = Entities + 5;
+    entity *SpringAnchor = Entities + 6;
+    
+    vec3 SpringLength = SpringAnchor->Transform.Position - 
+                        Hand->Transform.Position;
+    vec3 Pstep = SpringLength*(1.0f/(f32)(SpringJointCount+1.0f));
+    vec3 Pbase = Hand->Transform.Position;
+    
+    SpringRestLength = Length(Pstep);
+    SpringK = 10.0f;
+    
+    Hand->Physics->IsActive = true;
+    for(u32 JointIdx=0; JointIdx<SpringJointCount; JointIdx++){
+        vec3 P = Pbase + ((f32)(JointIdx+1.0f))*Pstep;
+        entity *Joint = Entities + (7+JointIdx);
+        Joint->Transform.Position = P;
+        Joint->Physics->Position = P;
+        Joint->Physics->Gravity = Vec3(0.0f, -0.09f, 0.0f);
+        Joint->Physics->IsActive = true;
+        Joint->IsActive = true;
+    }
+}
+
+void 
+kadabra::scene::ApplySpringForce(component_particle *Spring, vec3 AnchorP){
+    vec3 SpringDistance = Spring->Position-AnchorP;
+    f32 SpringLength = Length(SpringDistance);
+    
+    vec3 ForceDir = Normalize(SpringDistance);
+    f32  ForceMag = SpringK*(SpringRestLength-SpringLength);
+    
+    Spring->AddForce(ForceDir*ForceMag);
+}
+
+void 
+kadabra::scene::SimulateSpring(){
+    Assert(SpringActive);
+    
+    if(SpringJointCount){
+        
+        entity *Hand       = Entities + 5;
+        entity *FirstJoint = Entities + 7;
+        
+        ApplySpringForce(      Hand->Physics, FirstJoint->Transform.Position);
+        ApplySpringForce(FirstJoint->Physics,       Hand->Transform.Position);
+        
+        for(u32 JointIdx=0; JointIdx<(SpringJointCount-1); JointIdx++){
+            entity *NearHand   = Entities + (7+JointIdx);
+            entity *NearAnchor = Entities + (8+JointIdx);
+            
+            ApplySpringForce(  NearHand->Physics, NearAnchor->Transform.Position);
+            ApplySpringForce(NearAnchor->Physics,   NearHand->Transform.Position);
+        }
+        
+        entity *SpringAnchor = Entities + 6;
+        entity *LastJoint    = Entities + (6+SpringJointCount);
+        
+        ApplySpringForce(LastJoint->Physics, SpringAnchor->Transform.Position);
+    }
+}
+
+void 
+kadabra::scene::DestroySpring(){
+    SpringActive = false;
+    
+    entity *Hand = Entities + 5;
+    Hand->Physics->IsActive = false;
+    for(u32 JointIdx=0; JointIdx<SpringJointCount; JointIdx++){
+        entity *Joint = Entities + (7+JointIdx);
+        Joint->Physics->IsActive = false;
+        Joint->IsActive = false;
+    }
+}
+
+void 
 kadabra::scene::UpdatePhysics(f32 DeltaTime){
     // printf("FRAME BEGIN\n");
     f32 UpdateTimeRemaining = DeltaTime;
@@ -309,11 +400,15 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
         f32 dt = MinOf(FixedDeltaTime, UpdateTimeRemaining);
         
         // printf("UPDATE BEGIN // dt:%f\n", dt);
+        if(SpringActive){
+            SimulateSpring();
+        }
+        
         for(u32 Idx=0; Idx<EntityCount; Idx++){
             entity *E = Entities + Idx;
             component_transform *Transform = &E->Transform;
             component_particle *Physics = E->Physics;
-            if(Physics){
+            if(E->IsActive && Physics){
                 if(Physics->IsActive && 
                    Physics->IsStatic == false){
                     
@@ -323,15 +418,19 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                     b32 Blocked = false;
                     for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
                         if(Idx != Jdx){
+                            
+                            b32 PairCollides = false;
+                            
                             entity *Other = Entities + Jdx;
                             component_particle *OtherPhy = Other->Physics;
-                            if(OtherPhy && OtherPhy->IsActive){
+                            if(Other->IsActive && OtherPhy && 
+                               OtherPhy->IsActive){
                                 collision_response Response = Collides(E, Other, 
                                                                        Physics, 
                                                                        OtherPhy);
                                 
                                 if(Response.Collided){
-                                    Blocked = true;
+                                    PairCollides = true;
                                     
                                     vec3 V = Physics->Velocity;
                                     f32  Vlength = Length(V);
@@ -374,6 +473,15 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                 //         Mesh_O->CollidingFaceIdx = u32_Max;
                                 //     }
                                 // }
+                            }
+                            
+                            if(PairCollides){
+                                Blocked = true;
+                                if(Idx == 6 || Jdx == 0){
+                                    if(!SpringActive){
+                                        InitialiseSpring();
+                                    }
+                                }
                             }
                         }
                     }
@@ -430,16 +538,22 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
     Entities[5].Transform.Position = HeroP + HeroForward*0.283f;
     
     if(Input->IsMouseButtonWentDown(InputMouseButton_Left)){
+        if(SpringActive){
+            DestroySpring();
+        }
+        
         Entities[6].Transform.Position = HeroP + HeroForward*0.283f;
         
         HeroForward = RotateAround(HeroForward, 
                                    -45.0f, 
                                    Normalize(Cross(Vec3(0.0f, 1.0f, 0.0f), 
                                                    HeroForward)));
-       
+        
         component_particle *Physics = Entities[6].Physics;
         Physics->Position = Entities[6].Transform.Position;
         Physics->Velocity = HeroForward*10.0f;
+        
+        Entities[6].IsActive = true;
         Physics->IsActive = true;
     }
     

@@ -10,12 +10,21 @@
 #include "kdb_window.h"
 #include "kdb_mouse_pick.h"
 
+#include "kdb_physics.h"
+
 namespace kadabra {
     
     class renderer;
     
     class scene {
         public:
+        
+        f32 SpringRestLength;
+        f32 SpringK;
+        u32 SpringJointCount;
+        b32 SpringActive;
+        
+        //
         
         entity Entities[SceneCapacity];
         u32 EntityCount;
@@ -43,6 +52,12 @@ namespace kadabra {
         
         private:
         
+        //
+        
+        void InitialiseSpring();
+        void ApplySpringForce(component_particle *Spring, vec3 AnchorP);
+        void SimulateSpring();
+        void DestroySpring();
         void UpdateRenderer(input *Input, renderer *Renderer);
         void UpdateCamera(input *Input, camera *Camera, b32 Freeform);
         void UpdateGizmo(window *Window);
