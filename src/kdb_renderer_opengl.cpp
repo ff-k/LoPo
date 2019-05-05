@@ -725,6 +725,31 @@ namespace kadabra {
                                  Mesh->VertexCount+10,
                                  6);
                 }
+                
+                if(Mesh->CollidingFaceIdx != u32_Max){
+                    
+                    Assert(Drawable->IndexBuffer);
+                    
+                    static f32 Acc = 0.0f;
+                    f32 Blip = (Sin(Acc)+1.0f)*0.5f;
+                    Acc += 0.01f;
+                    
+                    opengl_shader_standard_uniform_layout *UniLt;
+                    UniLt = &StandardShader.UniformLayout;
+                    glUniform4f(UniLt->LocAmbientLight, 
+                                Blip, Blip, Blip, 1.0f);
+                    
+                    GLint PolyMode = u32_Max;
+                    glGetIntegerv(GL_POLYGON_MODE, &PolyMode);
+                    
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                    glDrawElements(Drawable->DrawMode, 
+                                   3,
+                                   GL_UNSIGNED_INT, 
+                                   (void *)(sizeof(u32)*3*Mesh->CollidingFaceIdx));
+                    
+                    glPolygonMode(GL_FRONT_AND_BACK, PolyMode);
+                }
     
                 OpenGLAssertNoError();
             } else {
@@ -752,7 +777,7 @@ namespace kadabra {
             } break;
             UnexpectedDefaultCase;
         }
-    
+        
         if(Scene){
             // NOTE(furkan):
             //  X+: Right

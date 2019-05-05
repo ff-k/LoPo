@@ -57,7 +57,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3( 0.0f,  0.0f,  0.0f), 
             Vec3( 0.0f,  4.3f,  0.0f),
             Vec3(-0.5f,  7.5f, 16.0f),
-            Vec3( 0.0f,  7.5f,  0.0f)
+            Vec3( 0.0f,  9.0f,  0.0f)  // Vec3( 0.0f,  7.5f,  0.0f)
         };
         
         vec3 EulerAngles[] = {
@@ -71,9 +71,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         vec3 Scale[] = {
             Vec3(1.00f, 7.20f, 1.00f),
             Vec3(1.00f, 7.80f, 1.00f),
-            Vec3(1.50f, 1.50f, 1.50f),
+            Vec3(1.00f, 1.00f, 1.00f), //Vec3(1.50f, 1.50f, 1.50f),
             Vec3(0.33f, 0.33f, 0.33f),
-            Vec3(0.20f, 0.20f, 0.20f)
+            Vec3(1.00f, 1.00f, 1.00f)  // Vec3(0.20f, 0.20f, 0.20f)
         };
         
         vec3 Velocity[] = {
@@ -101,7 +101,23 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
+            if(Idx == 0){
+                continue;
+            }
+            
+            if(Idx == 1){
+                continue;
+            }
+            
             // if(Idx == 2){
+            //     continue;
+            // }
+            
+            if(Idx == 3){
+                continue;
+            }
+            
+            // if(Idx == 4){
             //     continue;
             // }
             
@@ -151,7 +167,7 @@ kadabra::scene::UpdateCamera(input *Input, camera *Camera, b32 Freeform){
     f32 MovementSpeed = DeltaTime * 25.0f;
     f32 RotationSpeed = DeltaTime * 2500.0f;
     
-    if(Input->IsKeyWentDown(InputKey_P)){
+    if(Input->IsKeyWentDown(InputKey_O)){
         
         if(Camera->ProjectionType == CameraProjection_Perspective){
             Camera->ProjectionType = CameraProjection_Orthographic;
@@ -176,6 +192,16 @@ kadabra::scene::UpdateCamera(input *Input, camera *Camera, b32 Freeform){
         }
 
         Camera->Transform.EulerRotation.y -= MouseDelta.x * RotationSpeed;
+    }
+    
+    if(Input->IsKeyDown(InputKey_Ctrl) || 
+       Input->IsMouseButtonDown(InputMouseButton_Middle)){
+        vec2 MouseDelta = Input->GetNormalisedMousePositionDelta();
+         
+        Camera->Transform.Position += Camera->Axes.x * 
+                                      MovementSpeed * MouseDelta.x * 100.0f;
+        Camera->Transform.Position += Camera->Axes.y * 
+                                      MovementSpeed * MouseDelta.y * 100.0f;
     }
 
     if(Input->IsKeyDown(InputKey_W)){
@@ -259,6 +285,11 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
     b32 Success = true;
     
     // TODO(furkan): Pause, NextFrame, PlayIfPressed etc
+    b32 FrameUpdate = false;
+    if(Input->IsKeyDown(InputKey_P) || 
+       Input->IsKeyWentDown(InputKey_N)){
+        FrameUpdate = true;
+    }
     
     // if(Input->IsKeyWentDown(InputKey_C)){
     //     ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
@@ -270,72 +301,81 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdateGizmo(Window);
     }
     
-    f32 UpdateTimeRemaining = Input->DeltaTime;
-    while(UpdateTimeRemaining > 0.0f){
-        f32 dt = MinOf(FixedDeltaTime, UpdateTimeRemaining);
-        for(u32 Idx=0; Idx<EntityCount; Idx++){
-            entity *E = Entities + Idx;
-            component_particle *Physics = E->Physics;
-            if(Physics){
-                if(Physics->IsStatic == false){
-                    Physics->Integrate(dt);
-                    
-                    for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
-                        if(Idx != Jdx){
-                            entity *Other = Entities + Jdx;
-                            if(Other->Physics){
-                                if(Collides(E, Other)){
-                                    Physics->UndoLastIntegration();
+    if(FrameUpdate){
+        printf("FRAME BEGIN\n");
+        f32 UpdateTimeRemaining = Input->DeltaTime;
+        while(UpdateTimeRemaining > 0.0f){
+            f32 dt = MinOf(FixedDeltaTime, UpdateTimeRemaining);
+            
+            printf("UPDATE BEGIN // dt:%f\n", dt);
+            for(u32 Idx=0; Idx<EntityCount; Idx++){
+                entity *E = Entities + Idx;
+                component_particle *Physics = E->Physics;
+                if(Physics){
+                    if(Physics->IsStatic == false){
+                        
+                        Physics->PrepareIntegration(dt);
+                        
+                        b32 Blocked = false;
+                        for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
+                            if(Idx != Jdx){
+                                entity *Other = Entities + Jdx;
+                                component_particle *OtherPhy = Other->Physics;
+                                if(OtherPhy){
                                     
-                                    // TODO(furkan): OnCollision
+                                    collision_response Response = Collides(E, Other, 
+                                                                           Physics, 
+                                                                           OtherPhy);
+                                    
+                                    if(Response.Collided){
+                                        Blocked = true;
+                                        printf("Collided\n");
+                                    }
+                                    
+                                    if(E->Renderable){
+                                        asset_mesh *Mesh_E = E->Renderable->Mesh;
+                                        if(Response.Collided){
+                                            Mesh_E->CollidingFaceIdx = Response.CollidingFaceIdxA;
+                                        } else {
+                                            Mesh_E->CollidingFaceIdx = u32_Max;
+                                        }
+                                    }
+                                    
+                                    if(Other->Renderable){
+                                        asset_mesh *Mesh_O = Other->Renderable->Mesh;
+                                        if(Response.Collided){
+                                            Mesh_O->CollidingFaceIdx = Response.CollidingFaceIdxB;
+                                        } else {
+                                            Mesh_O->CollidingFaceIdx = u32_Max;
+                                        }
+                                    }
                                 }
                             }
                         }
+                        
+                        if(!Blocked){
+                            Physics->ApplyIntegration();
+                        }
+                        
+                        component_transform *Transform = &E->Transform;
+                        Transform->Position = Physics->Position;
                     }
-                    
-                    component_transform *Transform = &E->Transform;
-                    Transform->Position = Physics->Position;
                 }
             }
+            UpdateTimeRemaining -= dt;
+            printf("UPDATE END\n");
         }
-        UpdateTimeRemaining -= dt;
+        printf("FRAME END\n");
     }
     
     return Success;
 }
 
-b32
-kadabra::scene::Collides(entity *Entity, entity *Other){
+collision_response 
+kadabra::scene::Collides(entity *Entity, entity *Other, 
+                         component_particle *Physics, 
+                         component_particle *OtherPhy){
     
-    b32 Result = false;
-
-#if 0
-    aabb *BB_E = 0;
-    if(Entity->Renderable){
-        if(Entity->Renderable->Mesh){
-            BB_E = &Entity->Renderable->Mesh->AABB;
-        }
-    }
-    
-    aabb *BB_O = 0;
-    if(Other->Renderable){
-        if(Other->Renderable->Mesh){
-            BB_O = &Other->Renderable->Mesh->AABB;
-        }
-    }
-    
-    if(BB_E && BB_O){
-        aabb BB_E_World = *BB_E;
-        component_transform *T_E = &Entity->Transform;
-        AABBTransformInPlace(&BB_E_World, T_E->Position, T_E->EulerRotation, T_E->Scale);
-        
-        aabb BB_O_World = *BB_O;
-        component_transform *T_O = &Other->Transform;
-        AABBTransformInPlace(&BB_O_World, T_O->Position, T_O->EulerRotation, T_O->Scale);
-        
-        Result = AABBsOverlap(BB_E_World, BB_O_World);
-    }
-#else
     Assert(Entity->Renderable);
     Assert( Other->Renderable);
 
@@ -345,10 +385,16 @@ kadabra::scene::Collides(entity *Entity, entity *Other){
     component_transform *T_E = &Entity->Transform;
     component_transform *T_O = &Other->Transform;
     
-    Result = physics::Collides(Mesh_E, T_E, Mesh_O, T_O);
-#endif
+    vec3 DeltaP_E = Physics->GetDeltaPosition();
+    vec3 DeltaP_O = OtherPhy->GetDeltaPosition();
     
-    return Result;
+    vec3 RelDeltaP = DeltaP_O - DeltaP_E;
+    
+    collision_response Response = physics::Collides(Mesh_E, T_E, 
+                                                    Mesh_O, T_O, 
+                                                    RelDeltaP);
+    
+    return Response;
 }
 
 entity *

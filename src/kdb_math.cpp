@@ -325,6 +325,20 @@ kadabra::AABBsOverlap(const kadabra::aabb &A, const kadabra::aabb &B){
     return Result;
 }
 
+kadabra::mat4 
+kadabra::BuildTransformationMatrix(kadabra::vec3 Translation, 
+                                   kadabra::vec3 EulerAngles, 
+                                   kadabra::vec3 Scale){
+    mat4 TM = Mat4Identity();
+    TM = Mat4Translate(TM, Translation);
+    TM = Mat4Rotate(TM, EulerAngles.z, RotationAxis_Z);
+    TM = Mat4Rotate(TM, EulerAngles.y, RotationAxis_Y);
+    TM = Mat4Rotate(TM, EulerAngles.x, RotationAxis_X);
+    TM = Mat4Scale(TM, Scale);
+    
+    return TM;
+}
+
 void
 kadabra::AABBTransformInPlace(kadabra::aabb *AABB, 
                               kadabra::vec3 Translation, 
@@ -341,22 +355,12 @@ kadabra::AABBTransformInPlace(kadabra::aabb *AABB,
         kadabra::Vec3(AABB->Max.x, AABB->Max.y, AABB->Max.z)
     };
     
-    mat4 ModelMatrix = Mat4Identity();
-    ModelMatrix = Mat4Translate(ModelMatrix, Translation);
-    
-    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.z,
-                             RotationAxis_Z);
-    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.y,
-                             RotationAxis_Y);
-    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.x,
-                             RotationAxis_X);
-                             
-    ModelMatrix = Mat4Scale(ModelMatrix, Scale);
+    mat4 TransMat = BuildTransformationMatrix(Translation, EulerAngles, Scale);
     
     vec3 Min = Vec3(f32_Max, f32_Max, f32_Max);
     vec3 Max = Vec3(f32_Min, f32_Min, f32_Min);
     for(u32 Idx=0; Idx<8; Idx++){
-        vec3 TP = (ModelMatrix*Vec4(Ps[Idx], 1.0f)).xyz;
+        vec3 TP = (TransMat*Vec4(Ps[Idx], 1.0f)).xyz;
         
         if(Min.x > TP.x){ Min.x = TP.x; }
         if(Min.y > TP.y){ Min.y = TP.y; }
@@ -378,21 +382,11 @@ kadabra::TriangleTransformInPlace(kadabra::vec3 *V0,
                                   kadabra::vec3 Translation, 
                                   kadabra::vec3 EulerAngles, 
                                   kadabra::vec3 Scale){
-    mat4 ModelMatrix = Mat4Identity();
-    ModelMatrix = Mat4Translate(ModelMatrix, Translation);
+    mat4 TransMat = BuildTransformationMatrix(Translation, EulerAngles, Scale);
     
-    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.z,
-                             RotationAxis_Z);
-    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.y,
-                             RotationAxis_Y);
-    ModelMatrix = Mat4Rotate(ModelMatrix, EulerAngles.x,
-                             RotationAxis_X);
-                             
-    ModelMatrix = Mat4Scale(ModelMatrix, Scale);
-    
-    vec3 T0 = (ModelMatrix*Vec4(*V0, 1.0f)).xyz;
-    vec3 T1 = (ModelMatrix*Vec4(*V1, 1.0f)).xyz;
-    vec3 T2 = (ModelMatrix*Vec4(*V2, 1.0f)).xyz;
+    vec3 T0 = (TransMat*Vec4(*V0, 1.0f)).xyz;
+    vec3 T1 = (TransMat*Vec4(*V1, 1.0f)).xyz;
+    vec3 T2 = (TransMat*Vec4(*V2, 1.0f)).xyz;
     
     *V0 = T0; *V1 = T1; *V2 = T2;
 }

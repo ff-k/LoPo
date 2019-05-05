@@ -297,6 +297,8 @@ kadabra::asset_mesh::ComputePerFaceAttribute(b32 OverrideVertexNormals){
 }
 
 namespace kadabra {
+    // TODO(furkan): Move them into kdb_compare.h
+    
     s32 
     CompareU32Triplet(const u32_triplet *A, const u32_triplet *B){
         s32 Result = 0;
@@ -661,6 +663,8 @@ kadabra::asset_mesh::Load(char *Filename){
     } else {
         Error("Mesh file type is not supported! (%s)", Filename+FileExtIdx);
     }
+    
+    CollidingFaceIdx = u32_Max;
 
     return Success;
 }
@@ -670,6 +674,7 @@ kadabra::asset_manager::LoadGizmo(){
     b32 Success = false;
     
     ZeroStruct(&Gizmo);
+    Gizmo.CollidingFaceIdx = u32_Max;
     
     char *Filename = "..\\..\\assets\\meshes\\gizmo";
     char *FileContents = 0;

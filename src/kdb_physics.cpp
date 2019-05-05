@@ -1,27 +1,60 @@
 #include "kdb_physics.h"
 
 void 
-kadabra::component_particle::Integrate(f32 DeltaTime){
+kadabra::component_particle::PrepareIntegration(f32 DeltaTime){
+    Next_Position = Position + Velocity*DeltaTime;
     
+    vec3 Acceleration = Gravity;
+    Next_Velocity = (Velocity + Acceleration*DeltaTime) * Power(Damping, DeltaTime);
+}
+
+void 
+kadabra::component_particle::ApplyIntegration(){
     Prev_Position = Position;
     Prev_Velocity = Velocity;
     
-    Position += Velocity*DeltaTime;
-    
-    vec3 Acceleration = Gravity;
-    Velocity = (Velocity + Acceleration*DeltaTime) * Power(Damping, DeltaTime);
+    Position = Next_Position;
+    Velocity = Next_Velocity;
+}
+
+void 
+kadabra::component_particle::Integrate(f32 DeltaTime){
+    PrepareIntegration(DeltaTime);
+    ApplyIntegration();
 }
 
 void 
 kadabra::component_particle::UndoLastIntegration(){
+    Next_Position = Position;
+    Next_Velocity = Velocity;
+    
     Position = Prev_Position;
     Velocity = Prev_Velocity;
 }
 
-b32 
+kadabra::vec3 
+kadabra::component_particle::GetDeltaPosition(){
+    vec3 Result;
+    
+    Result = Next_Position-Position;
+    
+    return Result;
+}
+
+kadabra::vec3 
+kadabra::component_particle::GetDeltaVelocity(){
+    vec3 Result;
+    
+    Result = Next_Velocity-Velocity;
+    
+    return Result;
+}
+
+kadabra::collision_response 
 kadabra::physics::Collides(asset_mesh *MeshA, component_transform *XFormA, 
-                           asset_mesh *MeshB, component_transform *XFormB){
-    b32 Result = false;
+                           asset_mesh *MeshB, component_transform *XFormB, 
+                           vec3 RelativeDeltaPosition){
+    collision_response Result;
     
     bvh_node *BVHNodeA = MeshA->BVHRoot;
     bvh_node *BVHNodeB = MeshB->BVHRoot;
@@ -29,15 +62,19 @@ kadabra::physics::Collides(asset_mesh *MeshA, component_transform *XFormA,
     Assert(BVHNodeA);
     Assert(BVHNodeB);
     
-    Result = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, MeshB, BVHNodeB, XFormB);
+    Result = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, 
+                                           MeshB, BVHNodeB, XFormB, 
+                                           RelativeDeltaPosition);
     
     return Result;
 }
 
-b32 
+kadabra::collision_response 
 kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, component_transform *XFormA, 
-                                       asset_mesh *MeshB, bvh_node *BVHNodeB, component_transform *XFormB){
-    b32 Result = false;
+                                       asset_mesh *MeshB, bvh_node *BVHNodeB, component_transform *XFormB, 
+                                       vec3 RelativeDeltaPosition){
+    collision_response Result;
+    Result.Collided = false;
 
     aabb BB_A = BVHNodeA->AABB;
     AABBTransformInPlace(&BB_A, XFormA->Position, XFormA->EulerRotation, XFormA->Scale);
@@ -80,47 +117,76 @@ kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, co
                 TriangleTransformInPlace(&V0A, &V1A, &V2A, XFormA->Position, XFormA->EulerRotation, XFormA->Scale);
                 TriangleTransformInPlace(&V0B, &V1B, &V2B, XFormB->Position, XFormB->EulerRotation, XFormB->Scale);
                 
-                Result = gjk::Run(V0A, V1A, V2A, V0B, V1B, V2B);
+                Result = gjk::Run(V0A, V1A, V2A, V0B, V1B, V2B, RelativeDeltaPosition);
+                
+                if(Result.Collided){
+                    Result.CollidingFaceIdxA = BVHNodeA->FaceIdx;
+                    Result.CollidingFaceIdxB = BVHNodeB->FaceIdx;
+                }
                 
             } else {
-                b32 CollidesLeft  = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, MeshB, BVHNodeB->Left,  XFormB);
-                b32 CollidesRight = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, MeshB, BVHNodeB->Right, XFormB);
+                collision_response Left  = physics::NarrowPhaseCollision(MeshA, BVHNodeA       , XFormA, 
+                                                                         MeshB, BVHNodeB->Left , XFormB, 
+                                                                         RelativeDeltaPosition);
+                collision_response Right = physics::NarrowPhaseCollision(MeshA, BVHNodeA       , XFormA, 
+                                                                         MeshB, BVHNodeB->Right, XFormB, 
+                                                                         RelativeDeltaPosition);
                 
-                Result = CollidesLeft || CollidesRight;
+                if(Left.Collided && Right.Collided){
+                    if(Left.Distance < Right.Distance){
+                        Result = Left;
+                    } else {
+                        Result = Right;
+                    }
+                } else if (Left.Collided){
+                    Result = Left;
+                } else if (Right.Collided){
+                    Result = Right;
+                }
             }
         } else {
-            b32 CollidesLeft  = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Left,  XFormA, MeshB, BVHNodeB, XFormB);
-            b32 CollidesRight = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Right, XFormA, MeshB, BVHNodeB, XFormB);
+            collision_response Left  = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Left , XFormA, 
+                                                                     MeshB, BVHNodeB       , XFormB, 
+                                                                     RelativeDeltaPosition);
+            collision_response Right = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Right, XFormA, 
+                                                                     MeshB, BVHNodeB       , XFormB, 
+                                                                     RelativeDeltaPosition);
             
-            Result = CollidesLeft || CollidesRight;
+            if(Left.Collided && Right.Collided){
+                if(Left.Distance < Right.Distance){
+                    Result = Left;
+                } else {
+                    Result = Right;
+                }
+            } else if (Left.Collided){
+                Result = Left;
+            } else if (Right.Collided){
+                Result = Right;
+            }
         }
     }
     
     return Result;
 }
 
-b32 
-kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B){
+kadabra::collision_response 
+kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B, vec3 R){
     
-    b32 Result = true;
+    collision_response Result;
     
-    const u32 MaxIter = 64;
     const f32 GJKErrorTolerance = 0.000001f;
-                
-    // TODO(furkan): Get translations for both 
-    // meshes and compute R
-    vec3 R = Vec3(0.0f, 0.0f, 0.0f);
-    
-    f32  T = 0;
+               
+    // TODO(furkan): T and N does not return properly
+    f32  T = 0.0f;
     vec3 S = Vec3(0.0f, 0.0f, 0.0f);
     vec3 N = Vec3(0.0f, 0.0f, 0.0f);
     vec3 V = V0A - V0B;
     vec3 W[4];
     u32  K = 0;
     
-    u32 Iter = 0;
+    b32 Collided = true;
     f32  V_norm2 = V.x*V.x + V.y*V.y + V.z*V.z;
-    while(Result && Iter < MaxIter && 
+    while(Collided && 
           V_norm2 > GJKErrorTolerance){
         
         vec3 P = TriangleSupport(V0A, V1A, V2A, -V) - 
@@ -134,14 +200,14 @@ kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B){
                 Assert(T >= 0.0f);
                 
                 if(T > 1.0f){
-                    Result = false;
+                    Collided = false;
                 }
                 
                 S = T*R;
                 K = 0;
-                N = -V;
+                N = Normalize(-V);
             } else {
-                Result = false;
+                Collided = false;
             }
         }
         
@@ -152,31 +218,34 @@ kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B){
         
         if(K == 1){
             V = W[0];
+            Assert(K <= 1);
+            
         } else if(K == 2){
             V = gjk::Simplex2(W, &K);
+            Assert(K <= 2);
+            
         } else if(K == 3){
             V = gjk::Simplex3(W, &K);
+            Assert(K <= 3);
+            
         } else if(K == 4){
             b32 Inside = false;
             V = gjk::Simplex4(W, &K, &Inside);
             if(Inside){
+                V_norm2 = 0.0f;
                 break;
             }
+            
+            Assert(K < 4);
         } else {
             Assert(!"This must be impossible");
         }
         
-        Iter++;
         V_norm2 = V.x*V.x + V.y*V.y + V.z*V.z;
     }
     
-    if(Iter == MaxIter){
-        Error("GJK iterated MaxIter times\n");
-    }
-    
-    if(Result){
-        // printf("Collision normal: (%f %f %f)\n", N.x, N.y, N.z);
-    }
+    Result.Collided = Collided;
+    Result.Distance = V_norm2;
     
     return Result;
 }
@@ -355,7 +424,7 @@ kadabra::gjk::Simplex4(vec3 *W, u32 *K, b32 *Inside){
         *K = NewK;
     }
     
-    IsInside = *Inside;
+    *Inside = IsInside;
     
     return Result;
 }

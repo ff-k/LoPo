@@ -84,6 +84,8 @@ namespace kadabra {
         u32 FaceCount;
         u32 IndexCount;
     
+        u32 CollidingFaceIdx;
+    
         f32 TotalArea;
         
         b32 HasVertexNormals;

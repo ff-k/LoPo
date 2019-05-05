@@ -47,7 +47,9 @@ namespace kadabra {
         void UpdateCamera(input *Input, camera *Camera, b32 Freeform);
         void UpdateGizmo(window *Window);
         
-        b32  Collides(entity *Entity, entity *Other);
+        collision_response Collides(entity *Entity, entity *Other, 
+                                    component_particle *Physics, 
+                                    component_particle *OtherPhy);
     };
     
 }
