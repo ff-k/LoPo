@@ -35,7 +35,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     //
     
     SpringActive = false;
-    SpringJointCount = 3;
+    SpringJointCount = 10;
     u32 SceneObjectCount = 6 + 1 + SpringJointCount;
     
     Assert(SceneObjectCount <= SceneCapacity);
@@ -327,7 +327,7 @@ kadabra::scene::InitialiseSpring(){
     vec3 Pbase = Hand->Transform.Position;
     
     SpringRestLength = Length(Pstep);
-    SpringK = 10.0f;
+    SpringK = 4.0f;
     
     Hand->Physics->IsActive = true;
     for(u32 JointIdx=0; JointIdx<SpringJointCount; JointIdx++){
@@ -335,7 +335,7 @@ kadabra::scene::InitialiseSpring(){
         entity *Joint = Entities + (7+JointIdx);
         Joint->Transform.Position = P;
         Joint->Physics->Position = P;
-        Joint->Physics->Gravity = Vec3(0.0f, -0.09f, 0.0f);
+        Joint->Physics->Gravity = Vec3(0.0f, -0.01f, 0.0f);
         Joint->Physics->IsActive = true;
         Joint->IsActive = true;
     }
