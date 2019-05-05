@@ -57,7 +57,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3( 0.0f,  0.0f,  0.0f), 
             Vec3( 0.0f,  4.3f,  0.0f),
             Vec3(-0.5f,  7.5f, 16.0f),
-            Vec3( 0.0f,  9.0f,  0.0f)  // Vec3( 0.0f,  7.5f,  0.0f)
+            Vec3( 0.0f,  8.0f,  0.0f)
         };
         
         vec3 EulerAngles[] = {
@@ -71,9 +71,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         vec3 Scale[] = {
             Vec3(1.00f, 7.20f, 1.00f),
             Vec3(1.00f, 7.80f, 1.00f),
-            Vec3(1.00f, 1.00f, 1.00f), //Vec3(1.50f, 1.50f, 1.50f),
+            Vec3(1.50f, 1.50f, 1.50f),
             Vec3(0.33f, 0.33f, 0.33f),
-            Vec3(1.00f, 1.00f, 1.00f)  // Vec3(0.20f, 0.20f, 0.20f)
+            Vec3(0.20f, 0.20f, 0.20f)
         };
         
         vec3 Velocity[] = {
@@ -101,22 +101,22 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
-            if(Idx == 0){
-                continue;
-            }
-            
-            if(Idx == 1){
-                continue;
-            }
-            
+            // if(Idx == 0){
+            //     continue;
+            // }
+            // 
+            // if(Idx == 1){
+            //     continue;
+            // }
+            // 
             // if(Idx == 2){
             //     continue;
             // }
-            
-            if(Idx == 3){
-                continue;
-            }
-            
+            // 
+            // if(Idx == 3){
+            //     continue;
+            // }
+            // 
             // if(Idx == 4){
             //     continue;
             // }
@@ -127,7 +127,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             component_renderable *Renderable = Renderables + EntityCount;
             Renderable->Material = &AssetManager->LoPoMaterials[Material[Idx]];
             Renderable->Mesh = AssetManager->Meshes + Material[Idx];
-            Renderable->RenderMeshAABB = true;
+            Renderable->RenderMeshAABB = false;
             Renderable->ToBeRendered = true;
             
             entity *Entity = Entities + EntityCount;
@@ -285,8 +285,13 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
     b32 Success = true;
     
     // TODO(furkan): Pause, NextFrame, PlayIfPressed etc
-    b32 FrameUpdate = false;
-    if(Input->IsKeyDown(InputKey_P) || 
+    static b32 FramePlaying = true;
+    if(Input->IsKeyWentDown(InputKey_B)){
+        FramePlaying = !FramePlaying;
+    }
+    
+    b32 FrameUpdate = FramePlaying;
+    if(Input->IsKeyDown(InputKey_M) || 
        Input->IsKeyWentDown(InputKey_N)){
         FrameUpdate = true;
     }
@@ -302,12 +307,12 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
     }
     
     if(FrameUpdate){
-        printf("FRAME BEGIN\n");
+        // printf("FRAME BEGIN\n");
         f32 UpdateTimeRemaining = Input->DeltaTime;
         while(UpdateTimeRemaining > 0.0f){
             f32 dt = MinOf(FixedDeltaTime, UpdateTimeRemaining);
             
-            printf("UPDATE BEGIN // dt:%f\n", dt);
+            // printf("UPDATE BEGIN // dt:%f\n", dt);
             for(u32 Idx=0; Idx<EntityCount; Idx++){
                 entity *E = Entities + Idx;
                 component_particle *Physics = E->Physics;
@@ -322,33 +327,49 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
                                 entity *Other = Entities + Jdx;
                                 component_particle *OtherPhy = Other->Physics;
                                 if(OtherPhy){
-                                    
                                     collision_response Response = Collides(E, Other, 
                                                                            Physics, 
                                                                            OtherPhy);
                                     
                                     if(Response.Collided){
                                         Blocked = true;
-                                        printf("Collided\n");
-                                    }
-                                    
-                                    if(E->Renderable){
-                                        asset_mesh *Mesh_E = E->Renderable->Mesh;
-                                        if(Response.Collided){
-                                            Mesh_E->CollidingFaceIdx = Response.CollidingFaceIdxA;
-                                        } else {
-                                            Mesh_E->CollidingFaceIdx = u32_Max;
-                                        }
-                                    }
-                                    
-                                    if(Other->Renderable){
+                                        
+                                        Assert(Other->Renderable);
                                         asset_mesh *Mesh_O = Other->Renderable->Mesh;
-                                        if(Response.Collided){
-                                            Mesh_O->CollidingFaceIdx = Response.CollidingFaceIdxB;
-                                        } else {
-                                            Mesh_O->CollidingFaceIdx = u32_Max;
+                                        vec3 N = Mesh_O->FaceNormals[Response.CollidingFaceIdxB];
+                                        
+                                        Assert(Abs(1.0f-Length(N)) < 0.000001f);
+                                        
+                                        Physics->Position += N*0.01f;
+                                        
+                                        vec3 V = Physics->Velocity;
+                                        f32  Vlength = Length(V);
+                                        if(Vlength){
+                                            vec3 Vproj = (Dot(N, V)/Vlength)*V;
+                                            
+                                            f32 Restitution = 1.0f;
+                                            V = V + (1.0f + Restitution)*Vproj;
+                                            Physics->Velocity = V;
                                         }
                                     }
+                                    
+                                    // if(E->Renderable){
+                                    //     asset_mesh *Mesh_E = E->Renderable->Mesh;
+                                    //     if(Response.Collided){
+                                    //         Mesh_E->CollidingFaceIdx = Response.CollidingFaceIdxA;
+                                    //     } else {
+                                    //         Mesh_E->CollidingFaceIdx = u32_Max;
+                                    //     }
+                                    // }
+                                    // 
+                                    // if(Other->Renderable){
+                                    //     asset_mesh *Mesh_O = Other->Renderable->Mesh;
+                                    //     if(Response.Collided){
+                                    //         Mesh_O->CollidingFaceIdx = Response.CollidingFaceIdxB;
+                                    //     } else {
+                                    //         Mesh_O->CollidingFaceIdx = u32_Max;
+                                    //     }
+                                    // }
                                 }
                             }
                         }
@@ -363,9 +384,9 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
                 }
             }
             UpdateTimeRemaining -= dt;
-            printf("UPDATE END\n");
+            // printf("UPDATE END\n");
         }
-        printf("FRAME END\n");
+        // printf("FRAME END\n");
     }
     
     return Success;
