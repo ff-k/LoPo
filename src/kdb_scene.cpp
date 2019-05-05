@@ -32,8 +32,9 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     GizmoRenderable.ToBeRendered = true;
     GizmoSphereRadius = 200.0f;
 
+    //
     
-    u32 SceneObjectCount = 6;
+    u32 SceneObjectCount = 7;
     
     Assert(SceneObjectCount <= SceneCapacity);
     
@@ -332,12 +333,6 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                 if(Response.Collided){
                                     Blocked = true;
                                     
-                                    // if(Idx == 5){
-                                    //     printf("Collided!");
-                                    // }
-                                    
-                                    // Physics->Position -= Physics->GetDeltaPosition();
-                                    
                                     vec3 V = Physics->Velocity;
                                     f32  Vlength = Length(V);
                                     if(Vlength){
@@ -427,44 +422,26 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdatePhysics(Input->DeltaTime);
     }
     
-    component_transform *T = &Entities[5].Transform;
-    if(Input->IsKeyDown(InputKey_ArrowUp)){
-        T->Position.z += 0.01f;
-    }
-    
-    if(Input->IsKeyDown(InputKey_ArrowDown)){
-        T->Position.z -= 0.01f;
-    }
-    
-    if(Input->IsKeyDown(InputKey_ArrowLeft)){
-        T->Position.x -= 0.01f;
-    }
-    
-    if(Input->IsKeyDown(InputKey_ArrowRight)){
-        T->Position.x += 0.01f;
-    }
-    
     vec3 HeroP = Entities[4].Transform.Position;
     vec3 HeroForward = RotateAround(Vec3(0.0f, 0.0f, 1.0f), 
                                     Entities[4].Transform.EulerRotation.y,
                                     Vec3(0.0f, 1.0f, 0.0f));
-    // Entities[5].Transform.Position = HeroP + HeroForward*0.283f;
+    
+    Entities[5].Transform.Position = HeroP + HeroForward*0.283f;
+    
     if(Input->IsMouseButtonWentDown(InputMouseButton_Left)){
-        Entities[5].Transform.Position = HeroP + HeroForward*0.283f;
+        Entities[6].Transform.Position = HeroP + HeroForward*0.283f;
         
         HeroForward = RotateAround(HeroForward, 
                                    -45.0f, 
                                    Normalize(Cross(Vec3(0.0f, 1.0f, 0.0f), 
                                                    HeroForward)));
        
-        component_particle *Physics = Entities[5].Physics; // Entities[6].Physics;
-        Physics->Position = Entities[5].Transform.Position;
+        component_particle *Physics = Entities[6].Physics;
+        Physics->Position = Entities[6].Transform.Position;
         Physics->Velocity = HeroForward*10.0f;
         Physics->IsActive = true;
     }
-    
-    // vec3 P = Entities[5].Transform.Position; // Entities[6].Transform.Position;
-    // printf("(%f %f %f)\n", P.x, P.y, P.z);
     
     return Success;
 }
