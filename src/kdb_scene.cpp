@@ -129,7 +129,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         b32 EntityActive[] = {
-            true, false, true, false, true, true, 
+            true, true, true, true, true, true, 
             false
         };
         
