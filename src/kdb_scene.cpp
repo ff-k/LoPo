@@ -35,7 +35,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     //
     
     SpringActive = false;
-    SpringJointCount = 10;
+    SpringJointCount = 24;
     u32 SceneObjectCount = 6 + 1 + SpringJointCount;
     
     Assert(SceneObjectCount <= SceneCapacity);
@@ -53,9 +53,10 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             AssetManager->PlatformIdx,
             AssetManager->FliTriIdx,
             AssetManager->IcosphereIdx,
-            AssetManager->SphereIdx,
+            AssetManager->SphereIdx,      // NOTE(furkan): Hand
+            AssetManager->SphereIdx,      // NOTE(furkan): SpringEnd
             
-            AssetManager->CubeOutwardIdx,
+            AssetManager->CubeOutwardIdx, // NOTE(furkan): Spring joints
         };
         
         vec3 Position[] = {
@@ -64,6 +65,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3( 0.00f,  4.30f,  0.00f),
             Vec3(-0.50f,  7.50f, 16.00f),
             Vec3( 0.00f,  7.48f,  0.00f),
+            Vec3(-0.21f,  7.48f,  0.07f),
             Vec3(-0.21f,  7.48f,  0.07f),
             
             Vec3(-0.21f,  7.48f,  0.07f),
@@ -76,6 +78,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.000f, 0.0f),
             Vec3(  0.0f,-71.565f, 0.0f),
             Vec3(  0.0f, 0.0f, 0.0f),
+            Vec3(  0.0f, 0.0f, 0.0f),
             
             Vec3(  0.0f, 0.0f, 0.0f),
         };
@@ -86,6 +89,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(1.50f, 1.50f, 1.50f),
             Vec3(0.33f, 0.33f, 0.33f),
             Vec3(0.20f, 0.20f, 0.20f),
+            Vec3(0.02f, 0.02f, 0.02f),
             Vec3(0.02f, 0.02f, 0.02f),
             
             Vec3(0.02f, 0.02f, 0.02f),
@@ -98,6 +102,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3( -1.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
             
             Vec3(  0.0f,  0.0f, 0.0f),
         };
@@ -107,35 +112,41 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
-            Vec3(  0.0f, -1.0f, 0.0f),
+            Vec3(  0.0f, -10.0f, 0.0f),
+            Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             
             Vec3(  0.0f,  0.0f, 0.0f),
         };
         
         f32 Damping[] = {
-            0.0f, 0.0f, 0.0f, 0.99f, 0.95f, 0.99f, 
-            0.99f
+            0.0f, 0.0f, 0.0f, 0.99f, 0.95f, 0.9f, 
+            0.99f, 0.9f
         };
         
         f32 Restitution[] = {
             0.0f, 0.0f, 0.0f, 0.0, 0.0f, 0.0f, 
-            0.0f
+            0.0f, 0.0f
         };
         
         b32 PhysicsActive[] = {
+            true, true, true, true, true, true, 
+            false, true
+        };
+        
+        b32 CanCollide[] = {
             true, true, true, true, true, false, 
-            false
+            true, false
         };
         
         b32 EntityActive[] = {
             true, true, true, true, true, true, 
-            false
+            false, false
         };
         
         b32 IsStatic[] = {
             true, true, true, false, false, false, 
-            false
+            false, false
         };
         
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
@@ -143,13 +154,14 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             //     continue;
             // }
             
-            u32 ArrIdx = (Idx < 6) ? Idx : 6;
+            u32 ArrIdx = (Idx < 7) ? Idx : 7;
             
             component_particle *Physics = PhysicsCompos + EntityCount;
             *Physics = component_particle(Position[ArrIdx], Velocity[ArrIdx], 
                                           Gravity[ArrIdx], Damping[ArrIdx], 
                                           Restitution[ArrIdx], IsStatic[ArrIdx]);
             Physics->IsActive = PhysicsActive[ArrIdx];
+            Physics->CanCollide = CanCollide[ArrIdx];
             
             component_renderable *Renderable = Renderables + EntityCount;
             Renderable->Material = &AssetManager->LoPoMaterials[Material[ArrIdx]];
@@ -315,27 +327,63 @@ kadabra::scene::UpdateGizmo(window *Window){
 }
 
 void 
+kadabra::scene::FireSpring(vec3 HeroP, vec3 HeroForward){
+    entity *SpringAnchor = Entities + 6;
+    
+    SpringAnchor->Transform.Position = HeroP + HeroForward*0.283f;
+        
+    HeroForward = RotateAround(HeroForward, 
+                               -45.0f, 
+                               Normalize(Cross(Vec3(0.0f, 1.0f, 0.0f), 
+                                               HeroForward)));
+    
+    component_particle *Physics = SpringAnchor->Physics;
+    Physics->Position = SpringAnchor->Transform.Position;
+    Physics->Velocity = HeroForward*10.0f;
+    
+    SpringAnchor->IsActive = true;
+    Physics->IsActive = true;
+    Physics->CanCollide = true;
+}
+
+void 
 kadabra::scene::InitialiseSpring(){
+    
+    Entities[1].IsActive = false;
+    Entities[2].IsActive = false;
+    // Entities[3].IsActive = false;
+    // Entities[4].IsActive = false;
+    
+    //
+    
     SpringActive = true;
     
     entity *Hand         = Entities + 5;
     entity *SpringAnchor = Entities + 6;
     
+    f32 SpringLengthFactor = 0.99f;
+    
     vec3 SpringLength = SpringAnchor->Transform.Position - 
                         Hand->Transform.Position;
+    SpringLength *= SpringLengthFactor;
     vec3 Pstep = SpringLength*(1.0f/(f32)(SpringJointCount+1.0f));
-    vec3 Pbase = Hand->Transform.Position;
+    vec3 Pbase = Hand->Transform.Position + (1.0f-SpringLengthFactor)*SpringLength;
     
     SpringRestLength = Length(Pstep);
-    SpringK = 4.0f;
+    SpringK = 1500.0f;
     
+    Hand->Transform.Position = Pbase;
+    Hand->Physics->Position = Pbase;
+    Hand->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
     Hand->Physics->IsActive = true;
+    Hand->Physics->Gravity = Vec3(0.0f, -30.0f, 0.0f);
     for(u32 JointIdx=0; JointIdx<SpringJointCount; JointIdx++){
         vec3 P = Pbase + ((f32)(JointIdx+1.0f))*Pstep;
         entity *Joint = Entities + (7+JointIdx);
         Joint->Transform.Position = P;
         Joint->Physics->Position = P;
-        Joint->Physics->Gravity = Vec3(0.0f, -0.01f, 0.0f);
+        Joint->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
+        Joint->Physics->Gravity = Vec3(0.0f, -30.0f, 0.0f);
         Joint->Physics->IsActive = true;
         Joint->IsActive = true;
     }
@@ -343,13 +391,15 @@ kadabra::scene::InitialiseSpring(){
 
 void 
 kadabra::scene::ApplySpringForce(component_particle *Spring, vec3 AnchorP){
-    vec3 SpringDistance = Spring->Position-AnchorP;
-    f32 SpringLength = Length(SpringDistance);
-    
-    vec3 ForceDir = Normalize(SpringDistance);
-    f32  ForceMag = SpringK*(SpringRestLength-SpringLength);
-    
-    Spring->AddForce(ForceDir*ForceMag);
+    if(Spring->IsActive){
+        vec3 SpringDistance = Spring->Position-AnchorP;
+        f32 SpringLength = Length(SpringDistance);
+        
+        vec3 ForceDir = Normalize(SpringDistance);
+        f32  ForceMag = SpringK*(SpringRestLength-SpringLength);
+        
+        Spring->AddForce(ForceDir*ForceMag);
+    }
 }
 
 void 
@@ -376,12 +426,27 @@ kadabra::scene::SimulateSpring(){
         entity *LastJoint    = Entities + (6+SpringJointCount);
         
         ApplySpringForce(LastJoint->Physics, SpringAnchor->Transform.Position);
+        
+        entity *Hero       = Entities + 4;
+        vec3 HeroForward = RotateAround(Vec3(0.0f, 0.0f, 1.0f), 
+                                        Hero->Transform.EulerRotation.y,
+                                        Vec3(0.0f, 1.0f, 0.0f));
+        vec3 HandP = Hand->Transform.Position;
+        Hero->Transform.Position = HandP - HeroForward*0.283f;
+        Hero->Physics->Position = Hero->Transform.Position;
+        Hero->Physics->Velocity = Hand->Physics->Velocity;
+        
     }
 }
 
 void 
 kadabra::scene::DestroySpring(){
     SpringActive = false;
+    
+    entity *SpringAnchor = Entities + 6;
+    SpringAnchor->IsActive = false;
+    SpringAnchor->Physics->IsActive = false;
+    SpringAnchor->Physics->CanCollide = false;
     
     entity *Hand = Entities + 5;
     Hand->Physics->IsActive = false;
@@ -409,77 +474,78 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
             component_transform *Transform = &E->Transform;
             component_particle *Physics = E->Physics;
             if(E->IsActive && Physics){
-                if(Physics->IsActive && 
-                   Physics->IsStatic == false){
-                    
+                if(Physics->IsActive && Physics->IsStatic == false){
                     Physics->PrepareIntegration(dt);
                     Transform->Position = Physics->Position;
                     
                     b32 Blocked = false;
-                    for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
-                        if(Idx != Jdx){
-                            
-                            b32 PairCollides = false;
-                            
-                            entity *Other = Entities + Jdx;
-                            component_particle *OtherPhy = Other->Physics;
-                            if(Other->IsActive && OtherPhy && 
-                               OtherPhy->IsActive){
-                                collision_response Response = Collides(E, Other, 
-                                                                       Physics, 
-                                                                       OtherPhy);
+                    if(Physics->CanCollide){
+                        for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
+                            if(Idx != Jdx){
                                 
-                                if(Response.Collided){
-                                    PairCollides = true;
+                                b32 PairCollides = false;
+                                
+                                entity *Other = Entities + Jdx;
+                                component_particle *OtherPhy = Other->Physics;
+                                if(Other->IsActive && OtherPhy && 
+                                   OtherPhy->IsActive && OtherPhy->CanCollide){
+                                    collision_response Response = Collides(E, Other, 
+                                                                        Physics, 
+                                                                        OtherPhy);
                                     
-                                    vec3 V = Physics->Velocity;
-                                    f32  Vlength = Length(V);
-                                    if(Vlength){
-                                        Assert(Other->Renderable);
-                                        asset_mesh *Mesh_O = Other->Renderable->Mesh;
+                                    if(Response.Collided){
+                                        PairCollides = true;
                                         
-                                        component_transform *T_O = &Other->Transform;
-                                        vec3 N = Mesh_O->FaceNormals[Response.CollidingFaceIdxB];
-                                        TransformInPlace(&N, T_O->EulerRotation, T_O->Scale);
-                                        N = Normalize(N);
-                                        
-                                        Assert(Abs(1.0f-Length(N)) < 0.000001f);
-                                        
-                                        f32  DotNV = Dot(N, V);
-                                        if(DotNV < 0.0f){
-                                            vec3 Vproj = (DotNV/Vlength)*V;
-                                        
-                                            f32 Restitution = Physics->Restitution;
-                                            V = V + (1.0f + Restitution)*Vproj;
-                                            Physics->Velocity = V;
+                                        vec3 V = Physics->Velocity;
+                                        f32  Vlength = Length(V);
+                                        if(Vlength){
+                                            Assert(Other->Renderable);
+                                            asset_mesh *Mesh_O = Other->Renderable->Mesh;
+                                            
+                                            component_transform *T_O = &Other->Transform;
+                                            vec3 N = Mesh_O->FaceNormals[Response.CollidingFaceIdxB];
+                                            TransformInPlace(&N, T_O->EulerRotation, T_O->Scale);
+                                            N = Normalize(N);
+                                            
+                                            Assert(Abs(1.0f-Length(N)) < 0.000001f);
+                                            
+                                            f32  DotNV = Dot(N, V);
+                                            if(DotNV < 0.0f){
+                                                vec3 Vproj = (DotNV/Vlength)*V;
+                                            
+                                                f32 Restitution = Physics->Restitution;
+                                                V = V + (1.0f + Restitution)*Vproj;
+                                                Physics->Velocity = V;
+                                            }
                                         }
                                     }
+                                    
+                                    // if(E->Renderable){
+                                    //     asset_mesh *Mesh_E = E->Renderable->Mesh;
+                                    //     if(Response.Collided){
+                                    //         Mesh_E->CollidingFaceIdx = Response.CollidingFaceIdxA;
+                                    //     } else {
+                                    //         Mesh_E->CollidingFaceIdx = u32_Max;
+                                    //     }
+                                    // }
+                                    // 
+                                    // if(Other->Renderable){
+                                    //     asset_mesh *Mesh_O = Other->Renderable->Mesh;
+                                    //     if(Response.Collided){
+                                    //         Mesh_O->CollidingFaceIdx = Response.CollidingFaceIdxB;
+                                    //     } else {
+                                    //         Mesh_O->CollidingFaceIdx = u32_Max;
+                                    //     }
+                                    // }
                                 }
                                 
-                                // if(E->Renderable){
-                                //     asset_mesh *Mesh_E = E->Renderable->Mesh;
-                                //     if(Response.Collided){
-                                //         Mesh_E->CollidingFaceIdx = Response.CollidingFaceIdxA;
-                                //     } else {
-                                //         Mesh_E->CollidingFaceIdx = u32_Max;
-                                //     }
-                                // }
-                                // 
-                                // if(Other->Renderable){
-                                //     asset_mesh *Mesh_O = Other->Renderable->Mesh;
-                                //     if(Response.Collided){
-                                //         Mesh_O->CollidingFaceIdx = Response.CollidingFaceIdxB;
-                                //     } else {
-                                //         Mesh_O->CollidingFaceIdx = u32_Max;
-                                //     }
-                                // }
-                            }
-                            
-                            if(PairCollides){
-                                Blocked = true;
-                                if(Idx == 6 || Jdx == 0){
-                                    if(!SpringActive){
-                                        InitialiseSpring();
+                                if(PairCollides){
+                                    Blocked = true;
+                                    
+                                    if(Idx == 6){
+                                        if(!SpringActive){
+                                            InitialiseSpring();
+                                        }
                                     }
                                 }
                             }
@@ -530,31 +596,25 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdatePhysics(Input->DeltaTime);
     }
     
-    vec3 HeroP = Entities[4].Transform.Position;
+    entity *Hero = Entities + 4;
+    entity *Hand = Entities + 5;
+    
+    vec3 HeroP = Hero->Transform.Position;
     vec3 HeroForward = RotateAround(Vec3(0.0f, 0.0f, 1.0f), 
-                                    Entities[4].Transform.EulerRotation.y,
+                                    Hero->Transform.EulerRotation.y,
                                     Vec3(0.0f, 1.0f, 0.0f));
     
-    Entities[5].Transform.Position = HeroP + HeroForward*0.283f;
+    if(!SpringActive){
+        Hand->Transform.Position = HeroP + HeroForward*0.283f;
+        Hand->Physics->Position = Hand->Transform.Position;
+    }
     
     if(Input->IsMouseButtonWentDown(InputMouseButton_Left)){
         if(SpringActive){
             DestroySpring();
         }
         
-        Entities[6].Transform.Position = HeroP + HeroForward*0.283f;
-        
-        HeroForward = RotateAround(HeroForward, 
-                                   -45.0f, 
-                                   Normalize(Cross(Vec3(0.0f, 1.0f, 0.0f), 
-                                                   HeroForward)));
-        
-        component_particle *Physics = Entities[6].Physics;
-        Physics->Position = Entities[6].Transform.Position;
-        Physics->Velocity = HeroForward*10.0f;
-        
-        Entities[6].IsActive = true;
-        Physics->IsActive = true;
+        FireSpring(HeroP, HeroForward);
     }
     
     return Success;

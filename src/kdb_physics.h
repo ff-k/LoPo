@@ -19,6 +19,7 @@ namespace kadabra {
         f32  Restitution;
         b32  IsStatic;
         b32  IsActive;
+        b32  CanCollide;
         
         vec3 Next_Position;
         vec3 Next_Velocity;
@@ -30,7 +31,7 @@ namespace kadabra {
             Velocity    = Vec3(0.0f, 0.0f, 0.0f);
             Gravity     = Vec3(0.0f, 0.0f, 0.0f);
             TotalForce  = Vec3(0.0f, 0.0f, 0.0f);
-            InverseMass = 1.0f;
+            InverseMass = 10.0f;
             Damping     = 0.0f;
             Restitution = 0.0f;
             IsStatic    = false;
@@ -48,7 +49,7 @@ namespace kadabra {
             this->Velocity    = Velocity;
             this->Gravity     = Gravity;
             this->TotalForce  = Vec3(0.0f, 0.0f, 0.0f);
-            this->InverseMass = 1.0f;
+            this->InverseMass = 10.0f;
             this->Damping     = Damping;
             this->Restitution = Restitution;
             this->IsStatic    = IsStatic;

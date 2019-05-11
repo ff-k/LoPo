@@ -7,12 +7,16 @@ kadabra::component_particle::AddForce(kadabra::vec3 Force){
 
 void 
 kadabra::component_particle::PrepareIntegration(f32 DeltaTime){
-    Next_Position = Position + Velocity*DeltaTime;
-    
     vec3 Acceleration = Gravity;
     Acceleration += TotalForce*InverseMass;
     
+#if 0
+    Next_Position = Position + Velocity*DeltaTime;
     Next_Velocity = (Velocity + Acceleration*DeltaTime) * Power(Damping, DeltaTime);
+#else
+    Next_Velocity = (Velocity + Acceleration*DeltaTime) * Power(Damping, DeltaTime);
+    Next_Position = Position + Next_Velocity*DeltaTime;
+#endif
     
     // TODO(furkan): Clear TotalForce in ApplyIntegration??
     TotalForce = Vec3(0.0f, 0.0f, 0.0f);
