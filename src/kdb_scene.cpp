@@ -65,7 +65,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3( 0.00f,  0.00f,  0.00f), 
             Vec3( 0.00f,  4.30f,  0.00f),
             Vec3(-0.50f,  7.50f, 16.00f),
-            Vec3( 0.00f,  7.48f,  0.00f),
+            Vec3( 0.00f,  7.49f,  0.00f),
             Vec3(-0.21f,  7.48f,  0.07f),
             Vec3(-0.21f,  7.48f,  0.07f),
             
@@ -126,8 +126,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         f32 Damping[] = {
-            0.0f, 0.0f, 0.0f, 0.99f, 0.95f, 0.9f, 
-            0.99f, 0.9f, 0.9f
+            0.0f, 0.0f, 0.0f, 0.99f, 0.9f, 
+            0.6f, 0.99f, 0.6f, 0.6f
         };
         
         f32 Restitution[] = {
@@ -146,7 +146,13 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         };
         
         b32 EntityActive[] = {
-            true, true, true, true, true, true, 
+            true, 
+#if 1
+            true, true, 
+#else
+            false, false, 
+#endif
+            true, true, true, 
             false, false, false
         };
         
@@ -382,7 +388,8 @@ kadabra::scene::InitialiseSpring(){
     vec3 Pbase = Hand->Transform.Position + (1.0f-SpringLengthFactor)*SpringLength;
     
     SpringRestLength = Length(Pstep);
-    SpringK = 1500.0f;
+    // printf("RestLength: %f\n", SpringRestLength);
+    SpringK = 500.0f;
     
     Hand->Transform.Position = Pbase;
     Hand->Physics->Position = Pbase;
@@ -398,18 +405,24 @@ kadabra::scene::InitialiseSpring(){
         Joint->IsActive = true;
         // printf("Placed %u at (%f %f %f)\n", JointIdx, P.x, P.y, P.z);
     }
+    
+    entity *Hero = Entities + 4;
+    HeroRestLength = Length(Hero->Transform.Position - Hand->Transform.Position);
+    Hero->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
 }
 
 void 
-kadabra::scene::ApplySpringForce(component_particle *Spring, vec3 AnchorP){
+kadabra::scene::ApplySpringForce(component_particle *Spring, vec3 AnchorP, f32 RestLength, f32 K){
     if(Spring->IsActive){
         vec3 SpringDistance = Spring->Position-AnchorP;
         f32 SpringLength = Length(SpringDistance);
         
         vec3 ForceDir = Normalize(SpringDistance);
-        f32  ForceMag = SpringK*(SpringRestLength-SpringLength);
+        f32  ForceMag = K*(RestLength-SpringLength);
         
         Spring->AddForce(ForceDir*ForceMag);
+    } else {
+        Warning("ApplySpringForce called on an inactive spring");
     }
 }
 
@@ -422,32 +435,25 @@ kadabra::scene::SimulateSpring(){
         entity *Hand       = Entities + 5;
         entity *FirstJoint = Entities + 7;
         
-        ApplySpringForce(      Hand->Physics, FirstJoint->Physics->Position);
-        ApplySpringForce(FirstJoint->Physics,       Hand->Physics->Position);
+        ApplySpringForce(      Hand->Physics, FirstJoint->Physics->Position, SpringRestLength, SpringK);
+        ApplySpringForce(FirstJoint->Physics,       Hand->Physics->Position, SpringRestLength, SpringK);
         
         for(u32 JointIdx=0; JointIdx<(SpringJointCount-1); JointIdx++){
             entity *NearHand   = Entities + (7+JointIdx);
             entity *NearAnchor = Entities + (8+JointIdx);
             
-            ApplySpringForce(  NearHand->Physics, NearAnchor->Physics->Position);
-            ApplySpringForce(NearAnchor->Physics,   NearHand->Physics->Position);
+            ApplySpringForce(  NearHand->Physics, NearAnchor->Physics->Position, SpringRestLength, SpringK);
+            ApplySpringForce(NearAnchor->Physics,   NearHand->Physics->Position, SpringRestLength, SpringK);
         }
         
         entity *SpringAnchor = Entities + 6;
         entity *LastJoint    = Entities + (6+SpringJointCount);
         
-        ApplySpringForce(LastJoint->Physics, SpringAnchor->Physics->Position);
+        ApplySpringForce(LastJoint->Physics, SpringAnchor->Physics->Position, SpringRestLength, SpringK);
         
-        // TODO(furkan): These operations do not belong here
-        // entity *Hero       = Entities + 4;
-        // vec3 HeroForward = RotateAround(Vec3(0.0f, 0.0f, 1.0f), 
-        //                                 Hero->Transform.EulerRotation.y,
-        //                                 Vec3(0.0f, 1.0f, 0.0f));
-        // vec3 HandP = Hand->Transform.Position;
-        // Hero->Transform.Position = HandP - HeroForward*0.283f;
-        // Hero->Physics->Position = Hero->Transform.Position;
-        // Hero->Physics->Velocity = Hand->Physics->Velocity;
-        
+        entity *Hero = Entities + 4;
+        ApplySpringForce(Hand->Physics, Hero->Physics->Position, HeroRestLength, SpringK*(HeroRestLength/SpringRestLength));
+        ApplySpringForce(Hero->Physics, Hand->Physics->Position, HeroRestLength, SpringK*(HeroRestLength/SpringRestLength));
     }
 }
 
@@ -496,7 +502,7 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                 if(Physics->IsActive && Physics->IsStatic == false){
                     
                     Physics->PrepareIntegration(dt);
-                    Transform->Position = Physics->Position;
+                    Transform->Position = Physics->Next_Position;
                     
                     b32 Blocked = false;
                     if(Physics->CanCollide){
@@ -514,16 +520,19 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                                                            OtherPhy);
                                     
                                     if(Response.Collided){
+                                        printf("Collision between %u and %u\n", Idx, Jdx);
+                                        
                                         PairCollides = true;
                                         
                                         vec3 V = Physics->Velocity;
                                         f32  Vlength = Length(V);
-                                        if(Vlength){
+                                        if(Vlength > 0.000001f){
                                             Assert(Other->Renderable);
                                             asset_mesh *Mesh_O = Other->Renderable->Mesh;
                                             
                                             component_transform *T_O = &Other->Transform;
                                             vec3 N = Mesh_O->FaceNormals[Response.CollidingFaceIdxB];
+#if 0
                                             TransformInPlace(&N, T_O->EulerRotation, T_O->Scale);
                                             N = Normalize(N);
                                             
@@ -537,6 +546,9 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                                 V = V + (1.0f + Restitution)*Vproj;
                                                 Physics->Velocity = V;
                                             }
+#else
+                                            // TODO(furkan)
+#endif
                                         }
                                     }
                                     
@@ -601,7 +613,7 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdateGizmo(Window);
     }
     
-    static b32 FramePlaying = true;
+    static b32 FramePlaying = false;
     if(Input->IsKeyWentDown(InputKey_B)){
         FramePlaying = !FramePlaying;
     }
@@ -631,6 +643,20 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
     }
     
     if(FrameUpdate){
+        if(SpringActive){
+            entity *FirstJoint = Entities + 7;
+            vec3 AccDir = Normalize(FirstJoint->Physics->Velocity);
+            f32  AccSensitivity = 5.0f;
+            
+            if(Input->IsKeyDown(InputKey_ArrowUp)){
+                Hand->Physics->AddForce(AccDir*AccSensitivity);
+            }
+            
+            if(Input->IsKeyDown(InputKey_ArrowDown)){
+                Hand->Physics->AddForce(AccDir*AccSensitivity);
+            }
+        }
+        
         UpdatePhysics(Input->DeltaTime);
         
         if(!SpringActive){
@@ -662,8 +688,24 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
                 f32 SinEulerX = Sin(EulerX);
                 
                 f32 EulerY = 0.0f;
-                if(SinEulerX != 0.0f){
-                    EulerY = Asin(Dist_n.x/SinEulerX);
+                if(Abs(SinEulerX) > 0.001f){
+                    f32 AsinArg = Dist_n.x/SinEulerX;
+                    if(AsinArg > 1.0f){
+                        if((AsinArg - 1.0f) > 0.01f){
+                            Warning("AsinArg: %f\n", AsinArg);
+                        }
+                        
+                        AsinArg = 1.0f;
+                    } else if(AsinArg < -1.0f){
+                        if((-1.0f - AsinArg) > 0.01f){
+                            Warning("AsinArg: %f\n", AsinArg);
+                        }
+                        
+                        AsinArg = -1.0f;
+                    }
+                    
+                    
+                    EulerY = Asin(AsinArg);
                 }
                 
                 EulerX = RadianToDegree(EulerX);
@@ -671,6 +713,21 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
                 
                 if(Dist_n.z < 0.0f){
                     EulerY = 180.0f - EulerY;
+                }
+                
+                if(isnan(EulerX) || isnan(EulerY)){
+                    printf("---\n");
+                    f32 OneOverSinEulerX = 1.0f/SinEulerX;
+                    printf("SinEulerX: %f\n", SinEulerX);
+                    printf("OneOverSinEulerX: %f\n", OneOverSinEulerX);
+                    printf("Dist_n.x/SinEulerX: %f\n", (Dist_n.x/SinEulerX));
+                    printf("Dist_n.x*OneOverSinEulerX: %f\n", (Dist_n.x*OneOverSinEulerX));
+                    printf("Dist_n: (%f %f %f)\n", Dist_n.x, Dist_n.y, Dist_n.z);
+                    printf("Acos(Dist_n.y): %f\n", Acos(Dist_n.y));
+                    printf("Sin(Acos(Dist_n.y)): %f\n", Sin(Acos(Dist_n.y)));
+                    printf("Asin(Dist_n.x/SinEulerX): %f\n", Asin(Dist_n.x/(Sin(Acos(Dist_n.y)))));
+                    printf("%2u | Euler: (%f %f)\n", SJCIdx, EulerX, EulerY);    
+                    printf("---\n");
                 }
                 
                 E->Transform.Position = P;

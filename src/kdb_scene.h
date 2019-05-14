@@ -19,6 +19,8 @@ namespace kadabra {
     class scene {
         public:
         
+        f32 HeroRestLength;
+        
         f32 SpringRestLength;
         f32 SpringK;
         u32 SpringJointCount;
@@ -56,7 +58,8 @@ namespace kadabra {
         
         void FireSpring(vec3 HeroP, vec3 HeroForward);
         void InitialiseSpring();
-        void ApplySpringForce(component_particle *Spring, vec3 AnchorP);
+        void ApplySpringForce(component_particle *Spring, vec3 AnchorP, 
+                              f32 RestLength, f32 K);
         void SimulateSpring();
         void DestroySpring();
         void UpdateRenderer(input *Input, renderer *Renderer);
