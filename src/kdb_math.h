@@ -582,6 +582,9 @@ namespace kadabra {
                                vec3 EulerAngles, vec3 Scale);
     void TransformNormalInPlace(vec3 *N, vec3 EulerAngles, 
                                 vec3 Scale);
+    
+    vec2 EulerDegreesFromYAxis(vec3 Axis);
+    vec2 EulerDegreesFromZAxis(vec3 Axis);
 }
 
 #endif

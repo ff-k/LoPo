@@ -56,7 +56,7 @@ namespace kadabra {
         
         //
         
-        void FireSpring(vec3 HeroP, vec3 HeroForward);
+        void FireSpring(vec3 HeroP, vec3 HeroForward, vec3 HandP);
         void InitialiseSpring();
         void ApplySpringForce(component_particle *Spring, vec3 AnchorP, 
                               f32 RestLength, f32 K);
@@ -65,7 +65,7 @@ namespace kadabra {
         void UpdateRenderer(input *Input, renderer *Renderer);
         void UpdateCamera(input *Input, camera *Camera, b32 Freeform);
         void UpdateGizmo(window *Window);
-        void UpdatePhysics(f32 DeltaTime);
+        b32  UpdatePhysics(f32 DeltaTime);
         
         collision_response Collides(entity *Entity, entity *Other, 
                                     component_particle *Physics, 

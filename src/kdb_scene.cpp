@@ -16,7 +16,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
                   Vec3( 1.6f,   7.9f, -0.6f), 
                   Vec3(-5.0f, 250.0f,  0.0f), true);
                   
-    CameraCount = 1;
+    CameraCount = 2;
     for(u32 CamIdx=0; CamIdx<CameraCount; CamIdx++){
         Cameras[CamIdx] = Camera;
     }
@@ -65,7 +65,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3( 0.00f, -2.00f,  0.00f), 
             Vec3( 0.00f,  4.30f,  0.00f),
             Vec3(-0.50f,  7.50f, 16.00f),
-            Vec3( 0.00f,  7.49f,  0.00f),
+            Vec3( 0.00f,  7.50f,  0.00f),
             Vec3(-0.21f,  7.48f,  0.07f),
             Vec3(-0.21f,  7.48f,  0.07f),
             
@@ -79,15 +79,15 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.000f, 0.0f),
             Vec3(  0.0f,  0.000f, 0.0f),
             Vec3(  0.0f,-71.565f, 0.0f),
-            Vec3(  0.0f, 0.0f, 0.0f),
-            Vec3(  0.0f, 0.0f, 0.0f),
+            Vec3(  0.0f,  0.000f, 0.0f),
+            Vec3(  0.0f,  0.000f, 0.0f),
             
             Vec3(  0.0f, 0.0f, 0.0f),
             Vec3(  0.0f, 0.0f, 0.0f),
         };
         
         vec3 Scale[] = {
-            Vec3(1.00f, 7.20f, 1.00f),
+            Vec3(4.00f, 7.20f, 4.00f),
             Vec3(1.00f, 7.80f, 1.00f),
             Vec3(1.50f, 1.50f, 1.50f),
             Vec3(0.33f, 0.33f, 0.33f),
@@ -117,7 +117,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
-            Vec3(  0.0f, -10.0f, 0.0f),
+            Vec3(  0.0f, -4.0f, 0.0f),
             Vec3(  0.0f, -30.0f, 0.0f),
             Vec3(  0.0f,  0.0f, 0.0f),
             
@@ -155,7 +155,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         b32 EntityActive[] = {
             true, 
 #if 1
-            true, true, 
+            true, false, 
 #else
             false, false, 
 #endif
@@ -304,42 +304,31 @@ kadabra::scene::UpdateCamera(input *Input, camera *Camera, b32 Freeform){
     if(Input->IsKeyDown(InputKey_Home)){
         camera FreshCam(45.0f, 0.1f, 1000.0f, 
                         CameraProjection_Perspective,
-                        Vec3( 1.6f,   7.9f, -0.6f), 
-                        Vec3(-5.0f, 250.0f,  0.0f), true);
+                        Vec3(0.0f, 7.9f, 1.25f),
+                        Vec3(0.0f, 0.0f, 0.0f), true);
         *Camera = FreshCam;
-    }
-    
-    if(!Freeform){
-        vec3 CameraBoundaryMin = Vec3(-330.0f, 85.00f, -330.0f);
-        vec3 CameraBoundaryMax = Vec3( 330.0f, 85.00f,  330.0f);
-        
-        vec3 CameraP = Camera->Transform.Position;
-        if(CameraP.x < CameraBoundaryMin.x){
-            CameraP.x = CameraBoundaryMin.x;
-        } else if(CameraP.x > CameraBoundaryMax.x){
-            CameraP.x = CameraBoundaryMax.x;
-        }
-        
-        if(CameraP.y < CameraBoundaryMin.y){
-            CameraP.y = CameraBoundaryMin.y;
-        } else if(CameraP.y > CameraBoundaryMax.y){
-            CameraP.y = CameraBoundaryMax.y;
-        }
-        
-        if(CameraP.z < CameraBoundaryMin.z){
-            CameraP.z = CameraBoundaryMin.z;
-        } else if(CameraP.z > CameraBoundaryMax.z){
-            CameraP.z = CameraBoundaryMax.z;
-        }
-        Camera->Transform.Position = CameraP;
     }
     
     Camera->UpdateAxes();
     
+    if(!Freeform){
+        entity *Hero = Entities + 4;
+        vec3 CameraP = Hero->Transform.Position;
+        CameraP += Camera->Axes.x * 0.0f;
+        CameraP += Camera->Axes.y * 0.4f;
+        CameraP += Camera->Axes.z * 2.5f;
+        
+        Camera->Transform.Position = CameraP;
+    }
+    
     if(Input->IsKeyWentDown(InputKey_Space)){
         vec3 CamP = Camera->Transform.Position;
         vec3 CamO = Camera->Transform.EulerRotation;
-        Warning("CamP: (%f %f %f), CamO: (%f %f %f)", CamP.x, CamP.y, CamP.z, CamO.x, CamO.y, CamO.z);
+        Warning("CamP: (%f %f %f)", CamP.x, CamP.y, CamP.z);
+        Warning("CamO: (%f %f %f)", CamO.x, CamO.y, CamO.z);
+        Warning("Axes.x: (%f %f %f)", Camera->Axes.x.x, Camera->Axes.x.y, Camera->Axes.x.z);
+        Warning("Axes.y: (%f %f %f)", Camera->Axes.y.x, Camera->Axes.y.y, Camera->Axes.y.z);
+        Warning("Axes.z: (%f %f %f)", Camera->Axes.z.x, Camera->Axes.z.y, Camera->Axes.z.z);
     }
 }
 
@@ -353,19 +342,19 @@ kadabra::scene::UpdateGizmo(window *Window){
 }
 
 void 
-kadabra::scene::FireSpring(vec3 HeroP, vec3 HeroForward){
+kadabra::scene::FireSpring(vec3 HeroP, vec3 HeroForward, vec3 HandP){
     
-    vec3 HeroVelocity = RotateAround(HeroForward, 
-                                     -45.0f, 
-                                     Normalize(Cross(Vec3(0.0f, 1.0f, 0.0f), 
-                                                     HeroForward)));
+    vec3 AnchorVelocity = RotateAround(HeroForward, 
+                                       -45.0f, 
+                                       Normalize(Cross(Vec3(0.0f, 1.0f, 0.0f), 
+                                                       HeroForward)));
     
     entity *SpringAnchor = Entities + 6;
     SpringAnchor->IsActive = true;
     
     component_particle *Physics = SpringAnchor->Physics;
-    Physics->Position = HeroP + HeroForward*0.283f;
-    Physics->Velocity = HeroVelocity*10.0f;
+    Physics->Position = HandP;
+    Physics->Velocity = AnchorVelocity*15.0f;
     Physics->IsActive = true;
     Physics->CanCollide = true;
 }
@@ -384,6 +373,9 @@ kadabra::scene::InitialiseSpring(){
     
     entity *Hand         = Entities + 5;
     entity *SpringAnchor = Entities + 6;
+    
+    SpringAnchor->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
+    SpringAnchor->Physics->Gravity  = Vec3(0.0f, 0.0f, 0.0f);
     
     f32 SpringLengthFactor = 0.99f;
     
@@ -489,8 +481,10 @@ kadabra::scene::DestroySpring(){
     }
 }
 
-void 
+b32  
 kadabra::scene::UpdatePhysics(f32 DeltaTime){
+    b32 Success = true;
+    
     // printf("FRAME BEGIN\n");
     f32 UpdateTimeRemaining = DeltaTime;
     while(UpdateTimeRemaining > 0.0f){
@@ -510,11 +504,36 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                     
                     Physics->PrepareIntegration(dt);
                     Transform->Position = Physics->Next_Position;
+                    vec3 P = Transform->Position;
+                    if(isnan(P.x) || isnan(P.y) || isnan(P.z)){
+                        Error("NaN found!");
+                        
+                        Error("%f %f %f", Physics->Position.x, Physics->Position.y, Physics->Position.z);
+                        Error("%f %f %f", Physics->Velocity.x, Physics->Velocity.y, Physics->Velocity.z);
+                        Error("%f %f %f", Physics->Gravity.x, Physics->Gravity.y, Physics->Gravity.z);
+                        Error("%f %f %f", Physics->TotalForce.x, Physics->TotalForce.y, Physics->TotalForce.z);
+
+                        Error("--------");
+                        
+                        Success = false;
+                    }
                     
                     b32 Blocked = false;
                     if(Physics->CanCollide){
                         for(u32 Jdx=0; Jdx<EntityCount; Jdx++){
-                            if(Idx != Jdx){
+                            
+                            b32 ProcessContact = false;
+                            if(Idx == 3){
+                                if(Jdx > 3){
+                                    ProcessContact = true;
+                                }
+                            } else if(Idx > 3){
+                                if(Jdx < 4){
+                                    ProcessContact = true;
+                                }
+                            }
+                            
+                            if(ProcessContact && Idx != Jdx){
                                 
                                 b32 PairCollides = false;
                                 
@@ -574,11 +593,16 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                             V = V + (1.0f + Restitution)*Vproj;
                                             Physics->Velocity = V;
                                             
-                                            f32 ResolutionPrecision = 0.00001f;
+                                            f32 ResolutionPrecision = 0.0001f;
                                             vec3 ResolvedP = Physics->Position + 
                                                              N*ResolutionPrecision;
                                                              
                                             Transform->Position = Physics->Position = ResolvedP;
+                                            P = Transform->Position;
+                                            if(isnan(P.x) || isnan(P.y) || isnan(P.z)){
+                                                Error("NaN found!");
+                                                Success = false;
+                                            }
                                             
                                             // printf("Velocity After: (%f %f %f)\n", V.x, V.y, V.z);
 #endif
@@ -608,8 +632,14 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                     Blocked = true;
                                     
                                     if(Idx == 6){
-                                        if(!SpringActive){
-                                            InitialiseSpring();
+                                        if(Jdx < 4){
+                                            if(Jdx%2==0){
+                                                if(!SpringActive){
+                                                    InitialiseSpring();
+                                                }
+                                            } else {
+                                                DestroySpring();
+                                            }
                                         }
                                     }
                                 }
@@ -622,6 +652,11 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                     }
                     
                     Transform->Position = Physics->Position;
+                    P = Transform->Position;
+                    if(isnan(P.x) || isnan(P.y) || isnan(P.z)){
+                        Error("NaN found!");
+                        Success = false;
+                    }
                 }
             }
         }
@@ -629,22 +664,14 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
         // printf("UPDATE END\n");
     }
     // printf("FRAME END\n");
+    
+    return Success;
 }
 
 b32 
 kadabra::scene::Update(asset_manager *AssetManager, input *Input, 
                        window *Window, renderer *Renderer){
     b32 Success = true;
-    
-    // if(Input->IsKeyWentDown(InputKey_C)){
-    //     ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
-    // }
-    
-    UpdateRenderer(Input, Renderer);
-    UpdateCamera(Input, Cameras+ActiveCameraIndex, ActiveCameraIndex==0);
-    if(ShowGizmo){
-        UpdateGizmo(Window);
-    }
     
     static b32 FramePlaying = true;
     if(Input->IsKeyWentDown(InputKey_B)){
@@ -657,28 +684,41 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         FrameUpdate = true;
     }
     
-    //
-    
     entity *Hero = Entities + 4;
     entity *Hand = Entities + 5;
     
+    camera *ActiveCamera = Cameras + ActiveCameraIndex;
+    
     vec3 HeroP = Hero->Transform.Position;
-    vec3 HeroForward = RotateAround(Vec3(0.0f, 0.0f, 1.0f), 
-                                    Hero->Transform.EulerRotation.y,
-                                    Vec3(0.0f, 1.0f, 0.0f));
+    vec3 HeroForward = -ActiveCamera->Axes.z;
+    HeroForward.y = 0.0f;
+    if(Length(HeroForward) < 0.001f){
+        f32 Fx = Random01()*2.0f - 1.0f;
+        f32 Fz = Random01()*2.0f - 1.0f;
+        
+        HeroForward = Vec3(Fx, 0.0f, Fz);
+    }
+    
+    HeroForward = Normalize(HeroForward);
+    
+    if(Input->IsMouseButtonWentDown(InputMouseButton_Middle)){
+        if(SpringActive){
+            DestroySpring();
+        }
+    }
     
     if(Input->IsMouseButtonWentDown(InputMouseButton_Left)){
         if(SpringActive){
             DestroySpring();
         }
         
-        FireSpring(HeroP, HeroForward);
+        FireSpring(HeroP, HeroForward, Hand->Transform.Position);
     }
     
     if(FrameUpdate){
         if(SpringActive){
             entity *FirstJoint = Entities + 7;
-            vec3 AccDir = Normalize(FirstJoint->Physics->Velocity);
+            vec3 AccDir = HeroForward; //Normalize(FirstJoint->Physics->Velocity);
             f32  AccSensitivity = 5.0f;
             
             if(Input->IsKeyDown(InputKey_ArrowUp)){
@@ -690,7 +730,14 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
             }
         }
         
-        UpdatePhysics(Input->DeltaTime);
+        if(!UpdatePhysics(Input->DeltaTime)){
+            FramePlaying = false;
+        }
+        
+        if(Length(Hero->Physics->Velocity) > 0.01f){
+            // Hero->Transform.EulerRotation.xy = EulerDegreesFromZAxis(Hero->Physics->Velocity);
+            // Hero->Transform.EulerRotation.z = 0.0f;
+        }
         
         if(!SpringActive){
             Hand->Transform.Position = HeroP + HeroForward*0.283f;
@@ -715,60 +762,24 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
                 vec3 Dist = NAP-NHP;
                 vec3 P = NHP;
 
-                vec3 Dist_n = Normalize(Dist);
-                
-                f32 EulerX = Acos(Dist_n.y);
-                f32 SinEulerX = Sin(EulerX);
-                
-                f32 EulerY = 0.0f;
-                if(Abs(SinEulerX) > 0.001f){
-                    f32 AsinArg = Dist_n.x/SinEulerX;
-                    if(AsinArg > 1.0f){
-                        if((AsinArg - 1.0f) > 0.01f){
-                            Warning("AsinArg: %f\n", AsinArg);
-                        }
-                        
-                        AsinArg = 1.0f;
-                    } else if(AsinArg < -1.0f){
-                        if((-1.0f - AsinArg) > 0.01f){
-                            Warning("AsinArg: %f\n", AsinArg);
-                        }
-                        
-                        AsinArg = -1.0f;
-                    }
-                    
-                    
-                    EulerY = Asin(AsinArg);
-                }
-                
-                EulerX = RadianToDegree(EulerX);
-                EulerY = RadianToDegree(EulerY);
-                
-                if(Dist_n.z < 0.0f){
-                    EulerY = 180.0f - EulerY;
-                }
-                
-                if(isnan(EulerX) || isnan(EulerY)){
-                    printf("---\n");
-                    f32 OneOverSinEulerX = 1.0f/SinEulerX;
-                    printf("SinEulerX: %f\n", SinEulerX);
-                    printf("OneOverSinEulerX: %f\n", OneOverSinEulerX);
-                    printf("Dist_n.x/SinEulerX: %f\n", (Dist_n.x/SinEulerX));
-                    printf("Dist_n.x*OneOverSinEulerX: %f\n", (Dist_n.x*OneOverSinEulerX));
-                    printf("Dist_n: (%f %f %f)\n", Dist_n.x, Dist_n.y, Dist_n.z);
-                    printf("Acos(Dist_n.y): %f\n", Acos(Dist_n.y));
-                    printf("Sin(Acos(Dist_n.y)): %f\n", Sin(Acos(Dist_n.y)));
-                    printf("Asin(Dist_n.x/SinEulerX): %f\n", Asin(Dist_n.x/(Sin(Acos(Dist_n.y)))));
-                    printf("%2u | Euler: (%f %f)\n", SJCIdx, EulerX, EulerY);    
-                    printf("---\n");
-                }
+                vec2 Orient = EulerDegreesFromYAxis(Dist);
                 
                 E->Transform.Position = P;
-                E->Transform.EulerRotation = Vec3(EulerX, EulerY, 0.0f);
+                E->Transform.EulerRotation = Vec3(Orient.x, Orient.y, 0.0f);
                 E->Transform.Scale.y = Length(Dist)*0.5f;
                 E->IsActive = true;
             }
         }
+    }
+    
+    if(Input->IsKeyWentDown(InputKey_C)){
+        ActiveCameraIndex = ActiveCameraIndex ^ 0x1;
+    }
+    
+    UpdateRenderer(Input, Renderer);
+    UpdateCamera(Input, ActiveCamera, ActiveCameraIndex!=0);
+    if(ShowGizmo){
+        UpdateGizmo(Window);
     }
     
 #if 1

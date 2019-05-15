@@ -1,7 +1,7 @@
 for visual quality                                               | rendering ninja rope
----
 to keep collision detection active and accelerate hero with keys | connecting physics bodies without breaking collision detection
 for game logic                                                   | tps camera
+---
 for game mechancs                                                | windy regions
 for game mechancs                                                | flitri behaviour
 for game mechancs                                                | elastic environment
