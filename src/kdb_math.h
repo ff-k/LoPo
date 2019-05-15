@@ -578,7 +578,10 @@ namespace kadabra {
     void TriangleTransformInPlace(vec3 *V0, vec3 *V1, vec3 *V2, 
                                   mat4 *XForm);
                                   
-    void TransformInPlace(vec3 *V, vec3 EulerAngles, vec3 Scale);
+    void TransformPointInPlace(vec3 *P, vec3 Translation, 
+                               vec3 EulerAngles, vec3 Scale);
+    void TransformNormalInPlace(vec3 *N, vec3 EulerAngles, 
+                                vec3 Scale);
 }
 
 #endif

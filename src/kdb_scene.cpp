@@ -62,7 +62,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         
         vec3 Position[] = {
             Vec3( 0.00f, 15.00f,  0.00f),
-            Vec3( 0.00f,  0.00f,  0.00f), 
+            Vec3( 0.00f, -2.00f,  0.00f), 
             Vec3( 0.00f,  4.30f,  0.00f),
             Vec3(-0.50f,  7.50f, 16.00f),
             Vec3( 0.00f,  7.49f,  0.00f),
@@ -130,10 +130,17 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             0.6f, 0.99f, 0.6f, 0.6f
         };
         
+#if 1
         f32 Restitution[] = {
-            0.0f, 0.0f, 0.0f, 0.0, 0.0f, 0.0f, 
+            0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 
             0.0f, 0.0f, 0.0f
         };
+#else
+        f32 Restitution[] = {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 
+            0.0f, 0.0f, 0.0f
+        };
+#endif
         
         b32 PhysicsActive[] = {
             true, true, true, true, true, false, 
@@ -395,7 +402,7 @@ kadabra::scene::InitialiseSpring(){
     Hand->Physics->Position = Pbase;
     Hand->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
     Hand->Physics->IsActive = true;
-    // Hand->Physics->CanCollide = true; // TODO(furkan): This line breaks the rope
+    Hand->Physics->CanCollide = true; // TODO(furkan): This line breaks the rope
     for(u32 JointIdx=0; JointIdx<SpringJointCount; JointIdx++){
         vec3 P = Pbase + ((f32)(JointIdx+1.0f))*Pstep;
         entity *Joint = Entities + (7+JointIdx);
@@ -520,7 +527,7 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                                                            OtherPhy);
                                     
                                     if(Response.Collided){
-                                        printf("Collision between %u and %u\n", Idx, Jdx);
+                                        // printf("Collision between %u and %u\n", Idx, Jdx);
                                         
                                         PairCollides = true;
                                         
@@ -547,7 +554,33 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                                                 Physics->Velocity = V;
                                             }
 #else
-                                            // TODO(furkan)
+                                            // printf("Velocity Before: (%f %f %f)\n", V.x, V.y, V.z);
+                                        
+                                            TransformNormalInPlace(&N, T_O->EulerRotation, T_O->Scale);
+                                            N = Normalize(N);
+                                            
+                                            // printf("Normal: (%f %f %f)\n", N.x, N.y, N.z);
+                                            
+                                            Assert(Abs(1.0f-Length(N)) < 0.000001f);
+                                            
+                                            f32  DotNV = Dot(N, V);
+                                            if(DotNV > 0.0f){
+                                                DotNV *= -1.0f;
+                                            }
+                                            
+                                            vec3 Vproj = (DotNV/Vlength)*V;
+                                            
+                                            f32 Restitution = Physics->Restitution;
+                                            V = V + (1.0f + Restitution)*Vproj;
+                                            Physics->Velocity = V;
+                                            
+                                            f32 ResolutionPrecision = 0.00001f;
+                                            vec3 ResolvedP = Physics->Position + 
+                                                             N*ResolutionPrecision;
+                                                             
+                                            Transform->Position = Physics->Position = ResolvedP;
+                                            
+                                            // printf("Velocity After: (%f %f %f)\n", V.x, V.y, V.z);
 #endif
                                         }
                                     }
@@ -613,7 +646,7 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         UpdateGizmo(Window);
     }
     
-    static b32 FramePlaying = false;
+    static b32 FramePlaying = true;
     if(Input->IsKeyWentDown(InputKey_B)){
         FramePlaying = !FramePlaying;
     }

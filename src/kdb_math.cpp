@@ -385,14 +385,33 @@ kadabra::TriangleTransformInPlace(kadabra::vec3 *V0,
 }
 
 void
-kadabra::TransformInPlace(vec3 *V, vec3 EulerAngles, vec3 Scale){
+kadabra::TransformPointInPlace(vec3 *V, vec3 Translation, 
+                               vec3 EulerAngles, vec3 Scale){
+    mat4 TransMat = BuildTransformationMatrix(Translation, 
+                                              EulerAngles, 
+                                              Scale);
+    
+    vec3 TV = (TransMat*Vec4(*V, 1.0f)).xyz;
+    
+    *V = TV;
+}
+
+void
+kadabra::TransformNormalInPlace(vec3 *N, vec3 EulerAngles, vec3 Scale){
     mat4 TransMat = Mat4Identity();
     TransMat = Mat4Rotate(TransMat, EulerAngles.z, RotationAxis_Z);
     TransMat = Mat4Rotate(TransMat, EulerAngles.y, RotationAxis_Y);
     TransMat = Mat4Rotate(TransMat, EulerAngles.x, RotationAxis_X);
     TransMat = Mat4Scale(TransMat, Scale);
     
-    vec3 TV = (TransMat*Vec4(*V, 1.0f)).xyz;
+    mat4 TransInv;
+    if(Mat4Inverse(TransMat, &TransInv)){
+        TransMat = Mat4Transpose(TransInv);
+    } else {
+        Warning("Mat4Inverse failed in TransformNormalInPlace");
+    }
     
-    *V = TV;
+    vec3 TN = (TransMat*Vec4(*N, 1.0f)).xyz;
+    
+    *N = TN;
 }
