@@ -417,6 +417,39 @@ kadabra::TransformNormalInPlace(vec3 *N, vec3 EulerAngles, vec3 Scale){
 }
 
 kadabra::vec2 
+kadabra::EulerDegreesFromXAxis(vec3 Axis){
+    vec2 Result;
+    
+    vec3 Axis_n = Normalize(Axis);
+                
+    f32 EulerX = Acos(Axis_n.x);
+    f32 SinEulerX = Sin(EulerX);
+    
+    f32 EulerY = 0.0f;
+    if(Abs(SinEulerX) > 0.001f){
+        f32 AsinArg = Axis_n.z/SinEulerX;
+        if(AsinArg > 1.0f){
+            AsinArg = 1.0f;
+        } else if(AsinArg < -1.0f){
+            AsinArg = -1.0f;
+        }
+        
+        EulerY = Asin(AsinArg);
+    }
+    
+    EulerX = RadianToDegree(EulerX);
+    EulerY = RadianToDegree(EulerY);
+    
+    if(Axis_n.y < 0.0f){
+        EulerY = 180.0f - EulerY;
+    }
+    
+    Result = Vec2(EulerX, EulerY);
+    
+    return Result;
+}
+
+kadabra::vec2 
 kadabra::EulerDegreesFromYAxis(vec3 Axis){
     vec2 Result;
     

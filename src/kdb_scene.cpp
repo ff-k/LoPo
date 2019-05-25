@@ -146,7 +146,7 @@ kadabra::scene::Reset(){
         Vec3(  0.0f,  0.0f, 0.0f),
         Vec3(  0.0f,  0.0f, 0.0f),
         Vec3(  0.0f,  0.0f, 0.0f),
-        Vec3( -1.0f,  0.0f, 0.0f),
+        Vec3( -9.9f,  0.0f, 0.0f),
         Vec3(  0.0f,  0.0f, 0.0f),
         Vec3(  0.0f,  0.0f, 0.0f),
         Vec3(  0.0f,  0.0f, 0.0f),
@@ -417,7 +417,7 @@ kadabra::scene::FireSpring(vec3 HeroP, vec3 HeroForward, vec3 HandP){
 void 
 kadabra::scene::InitialiseSpring(){
     
-    // Floor->IsActive = false;
+    Floor->IsActive = false;
     // Platform->IsActive = false;
     // FliTri->IsActive = false;
     // Hero->IsActive = false;
@@ -835,13 +835,20 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
             }
         }
         
+        component_particle *FliTriPhy = FliTri->Physics;
+        f32 FliTriSpeed = Length(FliTriPhy->Velocity);
+        vec3 Centripetal = (1.0f/ FliTriPhy->InverseMass)*
+                           FliTriSpeed * FliTriSpeed *
+                           (-FliTriPhy->Position/* - FliTri->Patrol->Origin*/);
+        FliTriPhy->AddForce(Input->DeltaTime*Centripetal);
+        
         if(!UpdatePhysics(Input->DeltaTime)){
             FramePlaying = false;
         }
         
-        if(Length(Hero->Physics->Velocity) > 0.01f){
-            // Hero->Transform.EulerRotation.xy = EulerDegreesFromZAxis(Hero->Physics->Velocity);
-            // Hero->Transform.EulerRotation.z = 0.0f;
+        if(Length(FliTriPhy->Velocity) > 0.001f){
+            vec2 Orient = EulerDegreesFromYAxis(FliTriPhy->Velocity);
+            FliTri->Transform.EulerRotation = Vec3(90.0f-Orient.x, Orient.y+90.0f, 0.0f);
         }
         
         if(!SpringActive){

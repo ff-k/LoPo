@@ -7,6 +7,7 @@ for game logic                                                   | processing co
 ---
 for optimization                                                 | collision detection performance improvement (caching transform matrices?, isConvex flag?)
 for game mechancs                                                | flitri behaviour
+
 for game mechancs                                                | elastic environment
 for visual quality                                               | new world map
 for visual quality                                               | rope cylinders after firespring()
