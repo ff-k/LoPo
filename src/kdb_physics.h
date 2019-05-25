@@ -93,17 +93,47 @@ namespace kadabra {
                                            asset_mesh *MeshB, mat4 *XFormB, 
                                            vec3 RelativeDeltaPosition);
                             
+        static collision_response NarrowPhaseCollisionCC(asset_mesh *MeshA, mat4 *XFormA, aabb BB_A, 
+                                                         asset_mesh *MeshB, mat4 *XFormB, aabb BB_B, 
+                                                         vec3 RelativeDeltaPosition);
+                                                    
+        static collision_response NarrowPhaseCollisionC(asset_mesh *Convex   , mat4 *XFormConvex, aabb BB_Convex, 
+                                                        asset_mesh *MeshOther, bvh_node *BVHNodeOther, 
+                                                        mat4 *XFormOther, aabb BB_Other, vec3 RelativeDeltaPosition);
+                            
         static collision_response NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, mat4 *XFormA, aabb BB_A, 
                                                        asset_mesh *MeshB, bvh_node *BVHNodeB, mat4 *XFormB, aabb BB_B, 
                                                        vec3 RelativeDeltaPosition);
     };
     
+    enum gjk_shape_type {
+        GJKShape_ConvexMesh, 
+        GJKShape_Triangle,
+    };
+    
+    struct gjk_shape {
+        union {
+            struct {
+                vec3 V0;
+                vec3 V1;
+                vec3 V2;
+            };
+            struct {
+                asset_mesh *Mesh;
+                mat4       *XForm;
+            };
+        };
+        
+        gjk_shape_type Type;
+        
+        vec3 VInitial();
+        vec3 Support(vec3 Dir);
+    };
+    
     class gjk {
         public:
         
-        static collision_response Run(vec3 V0A, vec3 V1A, vec3 V2A, 
-                                      vec3 V0B, vec3 V1B, vec3 V2B, vec3 R);
-        static vec3 TriangleSupport(vec3 V0, vec3 V1, vec3 V2, vec3 Dir);
+        static collision_response Run(gjk_shape *ShapeA, gjk_shape *ShapeB, vec3 R);
         static vec3 Simplex2(vec3 *W, u32 *K);
         static vec3 Simplex3(vec3 *W, u32 *K);
         static vec3 Simplex4(vec3 *W, u32 *K, b32 *Inside);

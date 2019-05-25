@@ -84,9 +84,126 @@ kadabra::physics::Collides(asset_mesh *MeshA, mat4 *XFormA,
     aabb BB_B = BVHNodeB->AABB;
     AABBTransformInPlace(&BB_B, XFormB);
     
-    Result = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, BB_A, 
-                                           MeshB, BVHNodeB, XFormB, BB_B, 
-                                           RelativeDeltaPosition);
+    if(MeshA->IsConvex && MeshB->IsConvex){
+        Result = physics::NarrowPhaseCollisionCC(MeshA, XFormA, BB_A, 
+                                                 MeshB, XFormB, BB_B, 
+                                                 RelativeDeltaPosition);
+    } else if(MeshA->IsConvex){
+        Result = physics::NarrowPhaseCollisionC(MeshA,           XFormA, BB_A, 
+                                                MeshB, BVHNodeB, XFormB, BB_B, 
+                                                RelativeDeltaPosition);
+    } else if(MeshB->IsConvex){
+        Result = physics::NarrowPhaseCollisionC(MeshB,           XFormB, BB_B, 
+                                                MeshA, BVHNodeA, XFormA, BB_A, 
+                                                RelativeDeltaPosition);
+    } else {
+        Result = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, BB_A, 
+                                               MeshB, BVHNodeB, XFormB, BB_B, 
+                                               RelativeDeltaPosition);
+    }
+    
+    
+    
+    return Result;
+}
+
+kadabra::collision_response 
+kadabra::physics::NarrowPhaseCollisionCC(asset_mesh *MeshA, mat4 *XFormA, aabb BB_A, 
+                                         asset_mesh *MeshB, mat4 *XFormB, aabb BB_B, 
+                                         vec3 RelativeDeltaPosition){
+    collision_response Result;
+    Result.Collided = false;
+
+    if(AABBsOverlap(BB_A, BB_B)){
+        gjk_shape ShapeA;
+        ShapeA.Mesh  = MeshA;
+        ShapeA.XForm = XFormA;
+        ShapeA.Type  = GJKShape_ConvexMesh;
+        
+        gjk_shape ShapeB;
+        ShapeB.Mesh  = MeshB;
+        ShapeA.XForm = XFormB;
+        ShapeB.Type  = GJKShape_ConvexMesh;
+        
+        Result = gjk::Run(&ShapeA, &ShapeB, RelativeDeltaPosition);
+    }
+    
+    return Result;
+}
+
+kadabra::collision_response 
+kadabra::physics::NarrowPhaseCollisionC(asset_mesh *Convex   ,                          mat4 *XFormConvex, aabb BB_Convex, 
+                                        asset_mesh *MeshOther, bvh_node *BVHNodeOther , mat4 *XFormOther , aabb BB_Other, 
+                                        vec3 RelativeDeltaPosition){
+    collision_response Result;
+    Result.Collided = false;
+
+    if(AABBsOverlap(BB_Convex, BB_Other)){
+        if(BVHNodeOther->IsLeaf){
+            
+            // NOTE(furkan): Refer to "Collision Detection in Interactive 
+            // 3D Environments" and "Game Physics Pearls" for explanation 
+            // in detail. This function implements Algorithm 2 in "Smooth 
+            // Mesh Contacts", Game Physics Pearls.
+            //
+            // Also check the 5th Chapter of "Real-Time Collision 
+            // Detection" for closest point tests.
+            
+            u32  BaseIndexB = 3*BVHNodeOther->FaceIdx;
+            
+            u32  I0B = MeshOther->Indices[BaseIndexB + 0];
+            u32  I1B = MeshOther->Indices[BaseIndexB + 1];
+            u32  I2B = MeshOther->Indices[BaseIndexB + 2];
+            
+            vec3 V0B = MeshOther->Vertices[I0B].Position;
+            vec3 V1B = MeshOther->Vertices[I1B].Position;
+            vec3 V2B = MeshOther->Vertices[I2B].Position;
+            
+            TriangleTransformInPlace(&V0B, &V1B, &V2B, XFormOther);
+            
+            gjk_shape ShapeA;
+            ShapeA.Mesh  = Convex;
+            ShapeA.XForm = XFormConvex;
+            ShapeA.Type  = GJKShape_ConvexMesh;
+            
+            gjk_shape ShapeB;
+            ShapeB.V0   = V0B;
+            ShapeB.V1   = V1B;
+            ShapeB.V2   = V2B;
+            ShapeB.Type = GJKShape_Triangle;
+            
+            Result = gjk::Run(&ShapeA, &ShapeB, RelativeDeltaPosition);
+            
+            if(Result.Collided){
+                Result.CollidingFaceIdxB = BVHNodeOther->FaceIdx;
+            }
+            
+        } else {
+            aabb BB_Bl = BVHNodeOther->Left->AABB;
+            aabb BB_Br = BVHNodeOther->Right->AABB;
+            AABBTransformInPlace(&BB_Bl, XFormOther);
+            AABBTransformInPlace(&BB_Br, XFormOther);
+            
+            collision_response Left  = physics::NarrowPhaseCollisionC(Convex   ,                      XFormConvex, BB_Convex, 
+                                                                      MeshOther, BVHNodeOther->Left , XFormOther , BB_Bl, 
+                                                                      RelativeDeltaPosition);
+            collision_response Right = physics::NarrowPhaseCollisionC(Convex   ,                      XFormConvex, BB_Convex, 
+                                                                      MeshOther, BVHNodeOther->Right, XFormOther , BB_Br, 
+                                                                      RelativeDeltaPosition);
+            
+            if(Left.Collided && Right.Collided){
+                if(Left.Distance < Right.Distance){
+                    Result = Left;
+                } else {
+                    Result = Right;
+                }
+            } else if (Left.Collided){
+                Result = Left;
+            } else if (Right.Collided){
+                Result = Right;
+            }
+        }
+    }
     
     return Result;
 }
@@ -133,7 +250,19 @@ kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, ma
                 TriangleTransformInPlace(&V0A, &V1A, &V2A, XFormA);
                 TriangleTransformInPlace(&V0B, &V1B, &V2B, XFormB);
                 
-                Result = gjk::Run(V0A, V1A, V2A, V0B, V1B, V2B, RelativeDeltaPosition);
+                gjk_shape ShapeA;
+                ShapeA.V0   = V0A;
+                ShapeA.V1   = V1A;
+                ShapeA.V2   = V2A;
+                ShapeA.Type = GJKShape_Triangle;
+                
+                gjk_shape ShapeB;
+                ShapeB.V0   = V0B;
+                ShapeB.V1   = V1B;
+                ShapeB.V2   = V2B;
+                ShapeB.Type = GJKShape_Triangle;
+                
+                Result = gjk::Run(&ShapeA, &ShapeB, RelativeDeltaPosition);
                 
                 if(Result.Collided){
                     Result.CollidingFaceIdxA = BVHNodeA->FaceIdx;
@@ -196,7 +325,7 @@ kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, ma
 }
 
 kadabra::collision_response 
-kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B, vec3 R){
+kadabra::gjk::Run(gjk_shape *ShapeA, gjk_shape *ShapeB, vec3 R){
     
     collision_response Result;
     
@@ -209,7 +338,7 @@ kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B, ve
     f32  T = 0.0f;
     vec3 S = Vec3(0.0f, 0.0f, 0.0f);
     vec3 N = Vec3(0.0f, 0.0f, 0.0f);
-    vec3 V = V0A - V0B;
+    vec3 V = ShapeA->VInitial() - ShapeB->VInitial();
     vec3 W[4];
     u32  K = 0;
     
@@ -221,8 +350,7 @@ kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B, ve
         
         Iter++;
         
-        vec3 P = TriangleSupport(V0A, V1A, V2A, -V) - 
-                 TriangleSupport(V0B, V1B, V2B,  V);
+        vec3 P = ShapeA->Support(-V) - ShapeB->Support(V);
         
         f32 DotVP = Dot(V, P);
         f32 DotVR = Dot(V, R);
@@ -284,26 +412,56 @@ kadabra::gjk::Run(vec3 V0A, vec3 V1A, vec3 V2A, vec3 V0B, vec3 V1B, vec3 V2B, ve
 }
 
 kadabra::vec3 
-kadabra::gjk::TriangleSupport(vec3 V0, vec3 V1, vec3 V2, vec3 Dir){
-    
+kadabra::gjk_shape::VInitial(){
     vec3 Result;
     
-    f32 Dot0 = Dot(V0, Dir);
-    f32 Dot1 = Dot(V1, Dir);
-    f32 Dot2 = Dot(V2, Dir);
-    
-    if(Dot0 > Dot1){
-        if(Dot0 > Dot2){
+    switch(Type){
+        case GJKShape_ConvexMesh: {
+            Assert(Mesh->Indices);
+            
+            u32 VIdx  = Mesh->Indices[0];
+            vertex *V = Mesh->Vertices + VIdx;
+            vec3 P    = V->Position;
+            Result    = ((*XForm)*Vec4(P, 1.0f)).xyz;
+            
+        } break;
+        case GJKShape_Triangle: {
             Result = V0;
-        } else {
-            Result = V2;
-        }
-    } else {
-        if(Dot1 > Dot2){
-            Result = V1;
-        } else {
-            Result = V2;
-        }
+        } break;
+        UnexpectedDefaultCase;
+    }
+    
+    return Result;
+}
+
+kadabra::vec3 
+kadabra::gjk_shape::Support(vec3 Dir){
+    vec3 Result;
+    
+    switch(Type){
+        case GJKShape_ConvexMesh: {
+            Assert(!"Not implemented");
+        } break;
+        case GJKShape_Triangle: {
+            f32 Dot0 = Dot(V0, Dir);
+            f32 Dot1 = Dot(V1, Dir);
+            f32 Dot2 = Dot(V2, Dir);
+            
+            if(Dot0 > Dot1){
+                if(Dot0 > Dot2){
+                    Result = V0;
+                } else {
+                    Result = V2;
+                }
+            } else {
+                if(Dot1 > Dot2){
+                    Result = V1;
+                } else {
+                    Result = V2;
+                }
+            }
+        } break;
+        UnexpectedDefaultCase;
     }
     
     return Result;

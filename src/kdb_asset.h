@@ -89,6 +89,7 @@ namespace kadabra {
         f32 TotalArea;
         
         b32 HasVertexNormals;
+        b32 IsConvex;
     
         draw_primitive DrawPrimitive;
         union{
