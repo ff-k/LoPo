@@ -14,10 +14,32 @@
 
 namespace kadabra {
     
+    enum entity_id_bit {
+        IDBit_Ceiling        = 0x001,
+        IDBit_Floor          = 0x002,
+        IDBit_Platform       = 0x004,
+        IDBit_FliTri         = 0x008,
+        IDBit_Hero           = 0x010,
+        IDBit_Hand           = 0x020,
+        IDBit_Anchor         = 0x040,
+        IDBit_Joint          = 0x080,
+        IDBit_JointConnector = 0x100,
+    };
+    
     class renderer;
     
     class scene {
         public:
+        
+        entity *Ceiling;
+        entity *Floor;
+        entity *Platform;
+        entity *FliTri;
+        entity *Hero;
+        entity *Hand;
+        entity *SpringAnchor;
+        entity *FirstJoint;
+        u32 JointBaseIdx;
         
         f32 HeroRestLength;
         
@@ -54,6 +76,10 @@ namespace kadabra {
         mouse_pick PickEntity(camera *Camera, input *Input, window *Window);
         
         private:
+        
+        void Reset();
+        void OnCollision(entity *E, entity *Other);
+        b32  CheckCollisionMask(entity *E, entity *Other);
         
         //
         

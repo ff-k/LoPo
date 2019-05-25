@@ -17,6 +17,8 @@ namespace kadabra {
         f32  InverseMass; // TODO(furkan): Set this properly
         f32  Damping;
         f32  Restitution;
+        u32  CollisionMask;
+        u32  IdentifierBit;
         b32  IsStatic;
         b32  IsActive;
         b32  CanCollide;
@@ -27,15 +29,17 @@ namespace kadabra {
         vec3 Prev_Velocity;
         
         component_particle(){
-            Position    = Vec3(0.0f, 0.0f, 0.0f);
-            Velocity    = Vec3(0.0f, 0.0f, 0.0f);
-            Gravity     = Vec3(0.0f, 0.0f, 0.0f);
-            TotalForce  = Vec3(0.0f, 0.0f, 0.0f);
-            InverseMass = 10.0f;
-            Damping     = 0.0f;
-            Restitution = 0.0f;
-            IsStatic    = false;
-            IsActive    = false;
+            Position      = Vec3(0.0f, 0.0f, 0.0f);
+            Velocity      = Vec3(0.0f, 0.0f, 0.0f);
+            Gravity       = Vec3(0.0f, 0.0f, 0.0f);
+            TotalForce    = Vec3(0.0f, 0.0f, 0.0f);
+            InverseMass   = 10.0f;
+            Damping       = 0.0f;
+            Restitution   = 0.0f;
+            CollisionMask = 0x0;
+            IdentifierBit = 0x0;
+            IsStatic      = false;
+            IsActive      = false;
             
             Prev_Position = Position;
             Prev_Velocity = Velocity;
@@ -45,15 +49,17 @@ namespace kadabra {
         
         component_particle(vec3 Position, vec3 Velocity, vec3 Gravity, 
                            f32 Damping, f32 Restitution, b32 IsStatic){
-            this->Position    = Position;
-            this->Velocity    = Velocity;
-            this->Gravity     = Gravity;
-            this->TotalForce  = Vec3(0.0f, 0.0f, 0.0f);
-            this->InverseMass = 10.0f;
-            this->Damping     = Damping;
-            this->Restitution = Restitution;
-            this->IsStatic    = IsStatic;
-            this->IsActive    = false;
+            this->Position      = Position;
+            this->Velocity      = Velocity;
+            this->Gravity       = Gravity;
+            this->TotalForce    = Vec3(0.0f, 0.0f, 0.0f);
+            this->InverseMass   = 10.0f;
+            this->Damping       = Damping;
+            this->Restitution   = Restitution;
+            this->CollisionMask = 0x0;
+            this->IdentifierBit = 0x0;
+            this->IsStatic      = IsStatic;
+            this->IsActive      = false;
             
             Prev_Position = Position;
             Prev_Velocity = Velocity;
