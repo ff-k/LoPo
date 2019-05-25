@@ -1,11 +1,15 @@
 for visual quality                                               | rendering ninja rope
 to keep collision detection active and accelerate hero with keys | connecting physics bodies without breaking collision detection
 for game logic                                                   | tps camera
+for stability                                                    | adaptive number of spring joints
 ---
+
+reset after collision
+
 for game mechancs                                                | windy regions
 for game mechancs                                                | flitri behaviour
 for game mechancs                                                | elastic environment
-for stability                                                    | adaptive number of spring joints
+
 for visual quality                                               | rope cylinders after firespring()
 for game logic                                                   | processing collision responses
 for visual quality                                               | new world map

@@ -35,8 +35,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     //
     
     SpringActive = false;
-    SpringJointCount = 6;
-    u32 SceneObjectCount = 6 + 1 + SpringJointCount + SpringJointCount+1;
+    SpringJointCapacity = 6;
+    u32 SceneObjectCount = 6 + 1 + SpringJointCapacity + SpringJointCapacity+1;
     
     Assert(SceneObjectCount <= SceneCapacity);
     
@@ -56,8 +56,8 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             AssetManager->SphereIdx,    // NOTE(furkan): Hand
             AssetManager->SphereIdx,    // NOTE(furkan): SpringEnd [6]
             
-            AssetManager->SphereIdx,    // NOTE(furkan): Spring joints [7]-[7+SpringJointCount-1]
-            AssetManager->CylinderIdx,  // NOTE(furkan): Spring joint connectors [7+SpringJointCount]-[7+SpringJointCount + SpringJointCount]
+            AssetManager->SphereIdx,    // NOTE(furkan): Spring joints [7]-[7+SpringJointCapacity-1]
+            AssetManager->CylinderIdx,  // NOTE(furkan): Spring joint connectors [7+SpringJointCapacity]-[7+SpringJointCapacity + SpringJointCapacity]
         };
         
         vec3 Position[] = {
@@ -175,7 +175,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
 
             u32 ArrIdx = Idx;
             if(ArrIdx > 6){
-                if(ArrIdx > (6+SpringJointCount)){
+                if(ArrIdx > (6+SpringJointCapacity)){
                     ArrIdx = 8;
                 } else {
                     ArrIdx = 7;
@@ -352,17 +352,17 @@ kadabra::scene::FireSpring(vec3 HeroP, vec3 HeroForward, vec3 HandP){
     entity *SpringAnchor = Entities + 6;
     SpringAnchor->IsActive = true;
     
-    component_particle *Physics = SpringAnchor->Physics;
-    Physics->Position = HandP;
-    Physics->Velocity = AnchorVelocity*15.0f;
-    Physics->IsActive = true;
-    Physics->CanCollide = true;
+    component_particle *SpringAnchorPhysics = SpringAnchor->Physics;
+    SpringAnchorPhysics->Position = HandP;
+    SpringAnchorPhysics->Velocity = AnchorVelocity*12.0f;
+    SpringAnchorPhysics->IsActive = true;
+    SpringAnchorPhysics->CanCollide = true;
 }
 
 void 
 kadabra::scene::InitialiseSpring(){
     
-    // Entities[1].IsActive = false;
+    Entities[1].IsActive = false;
     // Entities[2].IsActive = false;
     // Entities[3].IsActive = false;
     // Entities[4].IsActive = false;
@@ -383,16 +383,34 @@ kadabra::scene::InitialiseSpring(){
                         Hand->Transform.Position;
                         
     SpringLength *= SpringLengthFactor;
-    vec3 Pstep = SpringLength*(1.0f/(f32)(SpringJointCount+1.0f));
     vec3 Pbase = Hand->Transform.Position + (1.0f-SpringLengthFactor)*SpringLength;
+
+    SpringJointCount = SpringJointCapacity;
+    vec3 Pstep = Vec3(0.0f, 0.0f, 0.0f);
+    while(SpringJointCount){
+        Pstep = SpringLength*(1.0f/(f32)(SpringJointCount+1.0f));
+        SpringRestLength = Length(Pstep);
+        if(SpringRestLength < 0.8f){
+            SpringJointCount--;
+        } else {
+            break;
+        }
+    }
     
-    SpringRestLength = Length(Pstep);
-    // printf("RestLength: %f\n", SpringRestLength);
-    SpringK = 500.0f;
+    if(SpringJointCount == 0){
+        Pstep = SpringLength;
+        SpringRestLength = Length(Pstep);
+    }
+    
+    Assert(SpringRestLength > 0.0f);
+    
+    // printf("SpringJointCount: %u, RestLength: %f\n", SpringJointCount, SpringRestLength);
+    SpringK = 1500.0f;
     
     Hand->Transform.Position = Pbase;
     Hand->Physics->Position = Pbase;
     Hand->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
+    Hand->Physics->TotalForce = Vec3(0.0f, 0.0f, 0.0f);
     Hand->Physics->IsActive = true;
     Hand->Physics->CanCollide = true; // TODO(furkan): This line breaks the rope
     for(u32 JointIdx=0; JointIdx<SpringJointCount; JointIdx++){
@@ -400,6 +418,7 @@ kadabra::scene::InitialiseSpring(){
         entity *Joint = Entities + (7+JointIdx);
         Joint->Physics->Position = P;
         Joint->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
+        Joint->Physics->TotalForce = Vec3(0.0f, 0.0f, 0.0f);
         Joint->Physics->IsActive = true;
         Joint->IsActive = true;
         // printf("Placed %u at (%f %f %f)\n", JointIdx, P.x, P.y, P.z);
@@ -408,6 +427,7 @@ kadabra::scene::InitialiseSpring(){
     entity *Hero = Entities + 4;
     HeroRestLength = Length(Hero->Transform.Position - Hand->Transform.Position);
     Hero->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
+    Hero->Physics->TotalForce = Vec3(0.0f, 0.0f, 0.0f);
 }
 
 void 
@@ -418,8 +438,21 @@ kadabra::scene::ApplySpringForce(component_particle *Spring, vec3 AnchorP, f32 R
         
         vec3 ForceDir = Normalize(SpringDistance);
         f32  ForceMag = K*(RestLength-SpringLength);
+        vec3 Force    = ForceDir*ForceMag;
         
-        Spring->AddForce(ForceDir*ForceMag);
+        if(isnan(Force.x) || isnan(Force.y) || isnan(Force.z)){
+            Error("NaN found!");
+            
+            Error("%f %f %f", Spring->Position.x, Spring->Position.y, Spring->Position.z);
+            Error("%f %f %f", AnchorP.x, AnchorP.y, AnchorP.z);
+            Error("%f %f %f", SpringDistance.x, SpringDistance.y, SpringDistance.z);
+            Error("%f %f %f", ForceDir.x, ForceDir.y, ForceDir.z);
+            Error("%f %f %f", Force.x, Force.y, Force.z);
+            Error("%f %f", SpringLength, ForceMag);
+            exit(-1);
+        }
+        
+        Spring->AddForce(Force);
     } else {
         Warning("ApplySpringForce called on an inactive spring");
     }
@@ -429,9 +462,14 @@ void
 kadabra::scene::SimulateSpring(){
     Assert(SpringActive);
     
+    entity *Hero         = Entities + 4;
+    entity *Hand         = Entities + 5;
+    entity *SpringAnchor = Entities + 6;
+    
+    ApplySpringForce(Hand->Physics, Hero->Physics->Position, HeroRestLength, SpringK*(HeroRestLength/SpringRestLength));
+    ApplySpringForce(Hero->Physics, Hand->Physics->Position, HeroRestLength, SpringK*(HeroRestLength/SpringRestLength));
+    
     if(SpringJointCount){
-        
-        entity *Hand       = Entities + 5;
         entity *FirstJoint = Entities + 7;
         
         ApplySpringForce(      Hand->Physics, FirstJoint->Physics->Position, SpringRestLength, SpringK);
@@ -445,14 +483,11 @@ kadabra::scene::SimulateSpring(){
             ApplySpringForce(NearAnchor->Physics,   NearHand->Physics->Position, SpringRestLength, SpringK);
         }
         
-        entity *SpringAnchor = Entities + 6;
         entity *LastJoint    = Entities + (6+SpringJointCount);
         
         ApplySpringForce(LastJoint->Physics, SpringAnchor->Physics->Position, SpringRestLength, SpringK);
-        
-        entity *Hero = Entities + 4;
-        ApplySpringForce(Hand->Physics, Hero->Physics->Position, HeroRestLength, SpringK*(HeroRestLength/SpringRestLength));
-        ApplySpringForce(Hero->Physics, Hand->Physics->Position, HeroRestLength, SpringK*(HeroRestLength/SpringRestLength));
+    } else {
+        ApplySpringForce(Hand->Physics, SpringAnchor->Physics->Position, SpringRestLength, SpringK);
     }
 }
 
@@ -476,9 +511,11 @@ kadabra::scene::DestroySpring(){
     
     u32 SJCCount = SpringJointCount+1;
     for(u32 SJCIdx=0; SJCIdx<SJCCount; SJCIdx++){
-        entity *E = Entities + (7+SpringJointCount+SJCIdx);
+        entity *E = Entities + (7+SpringJointCapacity+SJCIdx);
         E->IsActive = false;
     }
+    
+    SpringJointCount = 0;
 }
 
 b32  
@@ -719,14 +756,16 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         if(SpringActive){
             entity *FirstJoint = Entities + 7;
             vec3 AccDir = HeroForward; //Normalize(FirstJoint->Physics->Velocity);
-            f32  AccSensitivity = 5.0f;
+            f32  AccSensitivity = 20.0f;
             
             if(Input->IsKeyDown(InputKey_ArrowUp)){
+                // Hand->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
                 Hand->Physics->AddForce(AccDir*AccSensitivity);
             }
             
             if(Input->IsKeyDown(InputKey_ArrowDown)){
-                Hand->Physics->AddForce(AccDir*AccSensitivity);
+                // Hand->Physics->Velocity = Vec3(0.0f, 0.0f, 0.0f);
+                Hand->Physics->AddForce(-AccDir*AccSensitivity);
             }
         }
         
@@ -745,14 +784,16 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
             
             u32 SJCCount = SpringJointCount+1;
             for(u32 SJCIdx=0; SJCIdx<SJCCount; SJCIdx++){
-                entity *E = Entities + (7+SpringJointCount+SJCIdx);
+                entity *E = Entities + (7+SpringJointCapacity+SJCIdx);
                 
                 entity *NearHand   = Entities + (7+SJCIdx-1);
                 entity *NearAnchor = Entities + (7+SJCIdx);
                 
                 if(SJCIdx == 0){
                     NearHand = Entities + 5;   // NOTE(furkan): Hand
-                } else if(SJCIdx == SpringJointCount){
+                }
+                
+                if(SJCIdx == SpringJointCount){
                     NearAnchor = Entities + 6; // NOTE(furkan): Anchor
                 }
                 

@@ -23,6 +23,7 @@ namespace kadabra {
         
         f32 SpringRestLength;
         f32 SpringK;
+        u32 SpringJointCapacity;
         u32 SpringJointCount;
         b32 SpringActive;
         
