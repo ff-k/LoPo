@@ -78,26 +78,26 @@ kadabra::physics::Collides(asset_mesh *MeshA, mat4 *XFormA,
     Assert(BVHNodeA);
     Assert(BVHNodeB);
     
-    Result = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, 
-                                           MeshB, BVHNodeB, XFormB, 
-                                           RelativeDeltaPosition);
-    
-    return Result;
-}
-
-kadabra::collision_response 
-kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, mat4 *XFormA, 
-                                       asset_mesh *MeshB, bvh_node *BVHNodeB, mat4 *XFormB, 
-                                       vec3 RelativeDeltaPosition){
-    collision_response Result;
-    Result.Collided = false;
-
     aabb BB_A = BVHNodeA->AABB;
     AABBTransformInPlace(&BB_A, XFormA);
     
     aabb BB_B = BVHNodeB->AABB;
     AABBTransformInPlace(&BB_B, XFormB);
     
+    Result = physics::NarrowPhaseCollision(MeshA, BVHNodeA, XFormA, BB_A, 
+                                           MeshB, BVHNodeB, XFormB, BB_B, 
+                                           RelativeDeltaPosition);
+    
+    return Result;
+}
+
+kadabra::collision_response 
+kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, mat4 *XFormA, aabb BB_A, 
+                                       asset_mesh *MeshB, bvh_node *BVHNodeB, mat4 *XFormB, aabb BB_B, 
+                                       vec3 RelativeDeltaPosition){
+    collision_response Result;
+    Result.Collided = false;
+
     if(AABBsOverlap(BB_A, BB_B)){
         if(BVHNodeA->IsLeaf){
             if(BVHNodeB->IsLeaf){
@@ -141,11 +141,16 @@ kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, ma
                 }
                 
             } else {
-                collision_response Left  = physics::NarrowPhaseCollision(MeshA, BVHNodeA       , XFormA, 
-                                                                         MeshB, BVHNodeB->Left , XFormB, 
+                aabb BB_Bl = BVHNodeB->Left->AABB;
+                aabb BB_Br = BVHNodeB->Right->AABB;
+                AABBTransformInPlace(&BB_Bl, XFormB);
+                AABBTransformInPlace(&BB_Br, XFormB);
+                
+                collision_response Left  = physics::NarrowPhaseCollision(MeshA, BVHNodeA       , XFormA, BB_A, 
+                                                                         MeshB, BVHNodeB->Left , XFormB, BB_Bl, 
                                                                          RelativeDeltaPosition);
-                collision_response Right = physics::NarrowPhaseCollision(MeshA, BVHNodeA       , XFormA, 
-                                                                         MeshB, BVHNodeB->Right, XFormB, 
+                collision_response Right = physics::NarrowPhaseCollision(MeshA, BVHNodeA       , XFormA, BB_A, 
+                                                                         MeshB, BVHNodeB->Right, XFormB, BB_Br, 
                                                                          RelativeDeltaPosition);
                 
                 if(Left.Collided && Right.Collided){
@@ -161,11 +166,16 @@ kadabra::physics::NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, ma
                 }
             }
         } else {
-            collision_response Left  = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Left , XFormA, 
-                                                                     MeshB, BVHNodeB       , XFormB, 
+            aabb BB_Al = BVHNodeA->Left->AABB;
+            aabb BB_Ar = BVHNodeA->Right->AABB;
+            AABBTransformInPlace(&BB_Al, XFormA);
+            AABBTransformInPlace(&BB_Ar, XFormA);
+            
+            collision_response Left  = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Left , XFormA, BB_Al, 
+                                                                     MeshB, BVHNodeB       , XFormB, BB_B, 
                                                                      RelativeDeltaPosition);
-            collision_response Right = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Right, XFormA, 
-                                                                     MeshB, BVHNodeB       , XFormB, 
+            collision_response Right = physics::NarrowPhaseCollision(MeshA, BVHNodeA->Right, XFormA, BB_Ar, 
+                                                                     MeshB, BVHNodeB       , XFormB, BB_B, 
                                                                      RelativeDeltaPosition);
             
             if(Left.Collided && Right.Collided){

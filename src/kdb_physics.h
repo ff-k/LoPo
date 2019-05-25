@@ -93,8 +93,8 @@ namespace kadabra {
                                            asset_mesh *MeshB, mat4 *XFormB, 
                                            vec3 RelativeDeltaPosition);
                             
-        static collision_response NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, mat4 *XFormA, 
-                                                       asset_mesh *MeshB, bvh_node *BVHNodeB, mat4 *XFormB, 
+        static collision_response NarrowPhaseCollision(asset_mesh *MeshA, bvh_node *BVHNodeA, mat4 *XFormA, aabb BB_A, 
+                                                       asset_mesh *MeshB, bvh_node *BVHNodeB, mat4 *XFormB, aabb BB_B, 
                                                        vec3 RelativeDeltaPosition);
     };
     
