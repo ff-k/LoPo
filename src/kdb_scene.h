@@ -34,12 +34,14 @@ namespace kadabra {
         entity *Ceiling;
         entity *Floor;
         entity *Platform;
-        entity *FliTri;
         entity *Hero;
         entity *Hand;
         entity *SpringAnchor;
-        entity *FirstJoint;
         u32 JointBaseIdx;
+        u32 JointConnectorBaseIdx;
+        
+        u32 FliTriCount;
+        u32 FliTriBaseIdx;
         
         f32 HeroRestLength;
         

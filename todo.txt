@@ -4,12 +4,12 @@ for game logic                                                   | tps camera
 for stability                                                    | adaptive number of spring joints
 for game logic                                                   | reset after collision
 for game logic                                                   | processing collision responses
+for visual quality                                               | new world map
 ---
 for optimization                                                 | collision detection performance improvement (caching transform matrices?, isConvex flag?)
 for game mechancs                                                | flitri behaviour
 
 for game mechancs                                                | elastic environment
-for visual quality                                               | new world map
 for visual quality                                               | rope cylinders after firespring()
 for game mechancs                                                | windy regions
 ---
