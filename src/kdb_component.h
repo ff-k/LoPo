@@ -29,6 +29,10 @@ namespace kadabra {
         b32 ToBeRendered;
     };
     
+    struct component_attractor {
+        vec3 Position;
+    };
+    
 }
 
 #endif

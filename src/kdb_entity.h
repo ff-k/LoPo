@@ -10,6 +10,7 @@ namespace kadabra {
         component_transform   Transform;
         component_renderable *Renderable;
         component_particle   *Physics;
+        component_attractor  *Attractor;
         
         b32 IsActive;
     };

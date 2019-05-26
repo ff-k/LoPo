@@ -85,7 +85,7 @@ namespace kadabra {
         
         //
         
-        void FireSpring(vec3 HeroP, vec3 HeroForward, vec3 HandP);
+        void FireSpring(vec3 HeroForward, vec3 HandP);
         void InitialiseSpring();
         void ApplySpringForce(component_particle *Spring, vec3 AnchorP, 
                               f32 RestLength, f32 K);

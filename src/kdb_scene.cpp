@@ -38,15 +38,18 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     FliTriBaseIdx         = JointConnectorBaseIdx + SpringJointCapacity+1;
     
     SpringJointCapacity = 6;
-    FliTriCount         = 1;
+    FliTriCount         = 9;
     
     u32 SceneObjectCount = 6 + SpringJointCapacity + SpringJointCapacity+1 + FliTriCount;
     
     Assert(SceneObjectCount <= SceneCapacity);
     
+    component_attractor  *Attractors = 0;
     component_renderable *Renderables = 0;
     component_particle   *PhysicsCompos = 0;
-    if(platform::MemoryAllocate((void **)&Renderables, 
+    if(platform::MemoryAllocate((void **)&Attractors, 
+                                sizeof(component_attractor)*FliTriCount) &&
+       platform::MemoryAllocate((void **)&Renderables, 
                                 sizeof(component_renderable)*SceneObjectCount) &&
        platform::MemoryAllocate((void **)&PhysicsCompos, 
                                 sizeof(component_particle)*SceneObjectCount)){
@@ -74,10 +77,15 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
         JointConnectorBaseIdx = 6+SpringJointCapacity;
         FliTriBaseIdx         = JointConnectorBaseIdx + SpringJointCapacity+1;
         
+        u32 AttractorIdx = 0;
         for(u32 Idx=0; Idx<SceneObjectCount; Idx++){
+            component_attractor *Attractor = 0;
             u32 ArrIdx = Idx;
             if(ArrIdx >= FliTriBaseIdx){
                 ArrIdx = 8;
+                
+                Attractor = Attractors + AttractorIdx;
+                AttractorIdx++;
             } else if(ArrIdx >= JointConnectorBaseIdx){
                 ArrIdx = 7;
             } else if(ArrIdx >= JointBaseIdx){
@@ -91,6 +99,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
             entity *Entity = Entities + EntityCount;
             Entity->Renderable = Renderable;
             Entity->Physics = PhysicsCompos + EntityCount;
+            Entity->Attractor = Attractor;
             
             EntityCount++;
         }
@@ -116,8 +125,8 @@ kadabra::scene::Reset(){
     }
     
     vec3 Position[] = {
-        Vec3( 0.00f, 16.00f,  0.00f),
-        Vec3( 0.00f, -2.00f,  0.00f), 
+        Vec3( 0.00f, 18.00f,  0.00f),
+        Vec3( 0.00f, -4.00f,  0.00f), 
         Vec3( 0.00f,  4.30f,  0.00f),
         Vec3( 0.00f,  8.00f,  0.00f),
         Vec3(-0.21f,  7.48f,  0.07f),
@@ -258,6 +267,19 @@ kadabra::scene::Reset(){
         false
     };
     
+    vec3 FliTriOrigin[] = {
+        Vec3(-34.47f, 8.0f,  55.33f),
+        Vec3( -7.14f, 8.0f,  34.20f),
+        Vec3( 41.04f, 8.0f,  43.34f),
+        Vec3(-46.47f, 8.0f,  11.42f),
+        Vec3(-12.29f, 8.0f,  -1.43f),
+        Vec3( 21.61f, 8.0f,   1.71f),
+        Vec3(-47.04f, 8.0f, -35.06f),
+        Vec3( 13.72f, 8.0f, -39.91f),
+        Vec3(-47.04f, 8.0f, -35.06f)
+    };
+    
+    u32 AttractorIdx = 0;
     for(u32 Idx=0; Idx<EntityCount; Idx++){
         u32 ArrIdx = Idx;
         if(ArrIdx >= FliTriBaseIdx){
@@ -287,6 +309,23 @@ kadabra::scene::Reset(){
         component_renderable *Renderable = Entity->Renderable;
         Renderable->RenderMeshAABB = false;
         Renderable->ToBeRendered = true;
+        
+        if(ArrIdx == 8){
+            component_attractor *Attractor = Entity->Attractor;
+            Attractor->Position = FliTriOrigin[AttractorIdx];
+            AttractorIdx++;
+            
+            f32  Radius = 15.0f + 5.0f*Random01();
+            vec3 R = Normalize(Vec3(1.0f + Random01(), 
+                                    Random01(), 
+                                    1.0f + Random01())) * Radius;
+            vec3 P = Attractor->Position + R;
+            vec3 V = (5.0f + Random01()*4.22f)*Normalize(Cross(R, Vec3(0.0f, 1.0f, 0.0f)));
+            
+            Entity->Transform.Position = P;
+            Physics->Position = P;
+            Physics->Velocity = V;
+        }
     }
 }
 
@@ -421,7 +460,7 @@ kadabra::scene::UpdateGizmo(window *Window){
 }
 
 void 
-kadabra::scene::FireSpring(vec3 HeroP, vec3 HeroForward, vec3 HandP){
+kadabra::scene::FireSpring(vec3 HeroForward, vec3 HandP){
     
     vec3 AnchorVelocity = RotateAround(HeroForward, 
                                        -45.0f, 
@@ -657,7 +696,7 @@ kadabra::scene::UpdatePhysics(f32 DeltaTime){
                     Transform->Position = Physics->Next_Position;
                     vec3 P = Transform->Position;
                     if(isnan(P.x) || isnan(P.y) || isnan(P.z)){
-                        Error("NaN found!");
+                        Error("NaN found! %u", Idx);
                         
                         Error("%f %f %f", Physics->Position.x, Physics->Position.y, Physics->Position.z);
                         Error("%f %f %f", Physics->Velocity.x, Physics->Velocity.y, Physics->Velocity.z);
@@ -815,37 +854,35 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         FrameUpdate = true;
     }
     
-    camera *ActiveCamera = Cameras + ActiveCameraIndex;
-    
-    vec3 HeroP = Hero->Transform.Position;
-    vec3 HeroForward = -ActiveCamera->Axes.z;
-    HeroForward.y = 0.0f;
-    if(Length(HeroForward) < 0.001f){
-        f32 Fx = Random01()*2.0f - 1.0f;
-        f32 Fz = Random01()*2.0f - 1.0f;
-        
-        HeroForward = Vec3(Fx, 0.0f, Fz);
-    }
-    
-    HeroForward = Normalize(HeroForward);
-    
     if(Input->IsMouseButtonWentDown(InputMouseButton_Middle)){
         if(SpringActive){
             DestroySpring();
         }
     }
     
+    camera *ActiveCamera = Cameras + ActiveCameraIndex;
     if(Input->IsMouseButtonWentDown(InputMouseButton_Left)){
         if(SpringActive){
             DestroySpring();
         }
-        
-        FireSpring(HeroP, HeroForward, Hand->Transform.Position);
+    
+        vec3 HeroForward = -ActiveCamera->Axes.z;
+        FireSpring(HeroForward, Hand->Transform.Position);
     }
     
     if(FrameUpdate){
         if(SpringActive){
-            vec3 AccDir = HeroForward; //Normalize(FirstJoint->Physics->Velocity);
+            vec3 AccDir = -ActiveCamera->Axes.z;
+            AccDir.y = 0.0f;
+            if(Length(AccDir) < 0.001f){
+                f32 Fx = Random01()*2.0f - 1.0f;
+                f32 Fz = Random01()*2.0f - 1.0f;
+                
+                AccDir = Vec3(Fx, 0.0f, Fz);
+            }
+            
+            AccDir = Normalize(AccDir);
+            
             f32  AccSensitivity = 20.0f;
             
             if(Input->IsKeyDown(InputKey_ArrowUp)){
@@ -865,7 +902,7 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
             f32 FliTriSpeed = Length(FliTriPhy->Velocity);
             vec3 Centripetal = (1.0f/ FliTriPhy->InverseMass)*
                             FliTriSpeed * FliTriSpeed *
-                            (-FliTriPhy->Position/* - FliTri->Patrol->Origin*/);
+                            (-FliTriPhy->Position + FliTri->Attractor->Position);
             FliTriPhy->AddForce(Input->DeltaTime*Centripetal);
         }
         
@@ -885,7 +922,8 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         }
         
         if(!SpringActive){
-            Hand->Transform.Position = HeroP + HeroForward*0.283f;
+            vec3 HeroForward = -ActiveCamera->Axes.z;
+            Hand->Transform.Position = Hero->Transform.Position + HeroForward*0.283f;
         } else {
             
             u32 SJCCount = SpringJointCount+1;
@@ -918,7 +956,7 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
             }
         }
         
-        if(Hero->Transform.Position.y < 0.0f){
+        if(Hero->Transform.Position.y < Floor->Transform.Position.y){
             Reset();
         }
     }
