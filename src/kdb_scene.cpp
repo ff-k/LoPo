@@ -33,6 +33,7 @@ kadabra::scene::Initialise(asset_manager *AssetManager, window *Window){
     GizmoSphereRadius = 200.0f;
 
     //
+    
     JointBaseIdx          = 6;
     JointConnectorBaseIdx = 6+SpringJointCapacity;
     FliTriBaseIdx         = JointConnectorBaseIdx + SpringJointCapacity+1;
@@ -924,6 +925,20 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         if(!SpringActive){
             vec3 HeroForward = -ActiveCamera->Axes.z;
             Hand->Transform.Position = Hero->Transform.Position + HeroForward*0.283f;
+            
+            if(SpringAnchor->IsActive){
+                
+                vec3 Dist = SpringAnchor->Transform.Position - 
+                            Hand->Transform.Position;
+
+                vec2 Orient = EulerDegreesFromYAxis(Dist);
+                
+                entity *JointConnector = Entities + (JointConnectorBaseIdx);
+                JointConnector->Transform.Position = Hand->Transform.Position;
+                JointConnector->Transform.EulerRotation = Vec3(Orient.x, Orient.y, 0.0f);
+                JointConnector->Transform.Scale.y = Length(Dist)*0.5f;
+                JointConnector->IsActive = true;
+            }
         } else {
             
             u32 SJCCount = SpringJointCount+1;
