@@ -22,8 +22,8 @@ struct preferences {
     preferences(){
         MeshFilePaths = 0;
         
-        WindowWidth  = 960;
-        WindowHeight = 540;
+        WindowWidth  = 1280;
+        WindowHeight = 720;
         
         MeshCount = 0;
         MeshSwizzling = kadabra::SwizzleOrder_XYZ;

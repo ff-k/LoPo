@@ -318,7 +318,7 @@ kadabra::scene::Reset(){
             
             f32  Radius = 15.0f + 5.0f*Random01();
             vec3 R = Normalize(Vec3(1.0f + Random01(), 
-                                    Random01(), 
+                                    0.5f * Random01(), 
                                     1.0f + Random01())) * Radius;
             vec3 P = Attractor->Position + R;
             vec3 V = (5.0f + Random01()*4.22f)*Normalize(Cross(R, Vec3(0.0f, 1.0f, 0.0f)));
@@ -461,7 +461,7 @@ kadabra::scene::UpdateGizmo(window *Window){
 }
 
 void 
-kadabra::scene::FireSpring(vec3 HeroForward, vec3 HandP){
+kadabra::scene::FireSpring(vec3 HeroForward, vec3 HandP, f32 HeroSpeed){
     
     vec3 AnchorVelocity = RotateAround(HeroForward, 
                                        -45.0f, 
@@ -472,7 +472,7 @@ kadabra::scene::FireSpring(vec3 HeroForward, vec3 HandP){
     
     component_particle *SpringAnchorPhysics = SpringAnchor->Physics;
     SpringAnchorPhysics->Position = HandP;
-    SpringAnchorPhysics->Velocity = AnchorVelocity*10.0f;
+    SpringAnchorPhysics->Velocity = AnchorVelocity*MaxOf(10.0f, HeroSpeed);
     SpringAnchorPhysics->IsActive = true;
     SpringAnchorPhysics->CanCollide = true;
 }
@@ -868,7 +868,7 @@ kadabra::scene::Update(asset_manager *AssetManager, input *Input,
         }
     
         vec3 HeroForward = -ActiveCamera->Axes.z;
-        FireSpring(HeroForward, Hand->Transform.Position);
+        FireSpring(HeroForward, Hand->Transform.Position, Length(Hero->Physics->Velocity));
     }
     
     if(FrameUpdate){
